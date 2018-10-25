@@ -1,7 +1,8 @@
 // @flow
-import WebSocket from "ws";
 
-type ZooidId = number;
+import type WebSocket from "ws";
+
+export type ZooidId = number;
 
 type ZooidStatus = number; //TODO, replace with union
 
@@ -38,7 +39,7 @@ export default class ZooidManager {
   _subscribers: Array<(zm: ZooidManager) => void>;
   _ws: void | WebSocket;
 
-  constructor(socketUrl: string) {
+  constructor(ws: WebSocket) {
     this._state = {
       ass: 0,
       nb: 0,
@@ -49,11 +50,12 @@ export default class ZooidManager {
     this._subscribers = [];
     this._ws = undefined;
 
-    const ws = new WebSocket(socketUrl);
     ws.on('open', () => {
       this._ws = ws;
       this._ws.on('message', (message) => {
         this._state = JSON.parse(message);
+        if (this._state.nb < 1) return;
+
         this._subscribers.forEach((subscriber) => subscriber(this));
       });
     });
@@ -65,6 +67,14 @@ export default class ZooidManager {
 
   getNumberOfZooids(): number {
     return this._state.nb;
+  }
+
+  getAllIds(): Array<number> {
+    return this._state.zoo.map(({ id }) => id);
+  }
+
+  getZooid(id: number): void | Zooid {
+    return this._state.zoo.find((zooid) => zooid.id === id);
   }
 
   setZooids(
