@@ -1,8 +1,7 @@
 // @flow
 
-import type WebSocket from "ws";
-
-export type ZooidId = number;
+import type WebSocket from 'ws';
+import type { ZooidId } from './ZooidIdTracker';
 
 type ZooidStatus = number; //TODO, replace with union
 
@@ -156,5 +155,11 @@ export default class ZooidManager {
       wrappedSubscriber,
     ];
     return unsubscribe;
+  }
+
+  close() {
+    if (this._ws === undefined) return;
+
+    this._ws.close();
   }
 }

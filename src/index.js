@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 
 import createReconciler from './createReconciler';
 import ZooidDocument from './ZooidDocument';
+import ZooidIdTracker from './ZooidIdTracker';
 import ZooidManager from './ZooidManager';
 
 class TestApp extends React.Component<*, Object> {
@@ -79,7 +80,8 @@ const zooidManager = new ZooidManager(webSocket);
 zooidManager.subscribe((_, unsubscribe) => {
   unsubscribe();
 
-  const zooidDocument = new ZooidDocument(zooidManager);
+  const zooidIdTracker = new ZooidIdTracker();
+  const zooidDocument = new ZooidDocument(zooidManager, zooidIdTracker);
   const { updateContainer, createContainer } = createReconciler();
   updateContainer(
     <TestApp dim={zooidManager.getTableDimentions()} des={[0, 0]} />,

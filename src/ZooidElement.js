@@ -1,7 +1,8 @@
 // @flow
 
 import type { ZooidUpdate } from './ZooidDocument';
-import type { ZooidId, Zooid } from './ZooidManager';
+import type { ZooidId } from './ZooidIdTracker';
+import type { Zooid } from './ZooidManager';
 
 type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
 
@@ -12,7 +13,8 @@ export default class ZooidElement {
 
   constructor(attrs: ZoidAttribues) {
     this._attrs = attrs;
-    this.detachParent();
+    this._id = undefined;
+    this._elementDidUpdate = () => Promise.resolve(this);
   }
 
   update(newAttrs?: ZoidAttribues): Promise<ZooidElement> {
@@ -35,8 +37,15 @@ export default class ZooidElement {
     };
   }
 
-  detachParent() {
+  detachParent(): number {
+    const id = this._id;
+    if (typeof id !== 'number') {
+      throw new Error('Unable to detachParent(..) element with no parent');
+    }
+
     this._id = undefined;
     this._elementDidUpdate = () => Promise.resolve(this);
+
+    return id;
   }
 }
