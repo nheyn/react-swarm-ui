@@ -1,11 +1,13 @@
 // @flow
 import React from 'react';
+import WebSocket from 'ws';
 
 import createReconciler from './createReconciler';
 import ZooidDocument from './ZooidDocument';
 import ZooidManager from './ZooidManager';
 
-const zooidManager = new ZooidManager('http://localhost:9092');
+const webSocket = new WebSocket('http://localhost:9092');
+const zooidManager = new ZooidManager(webSocket);
 const zooidDocument = new ZooidDocument(zooidManager);
 const { updateContainer, createContainer } = createReconciler();
 updateContainer(

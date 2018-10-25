@@ -1,5 +1,6 @@
 // @flow
-import WebSocket from "ws";
+
+import type WebSocket from "ws";
 
 export type ZooidId = number;
 
@@ -38,7 +39,7 @@ export default class ZooidManager {
   _subscribers: Array<(zm: ZooidManager) => void>;
   _ws: void | WebSocket;
 
-  constructor(socketUrl: string) {
+  constructor(ws: WebSocket) {
     this._state = {
       ass: 0,
       nb: 0,
@@ -49,7 +50,6 @@ export default class ZooidManager {
     this._subscribers = [];
     this._ws = undefined;
 
-    const ws = new WebSocket(socketUrl);
     ws.on('open', () => {
       this._ws = ws;
       this._ws.on('message', (message) => {
