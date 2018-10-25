@@ -1,6 +1,6 @@
 // @flow
 
-import type ZooidDocument, { ZooidUpdate } from './ZooidDocument';
+import type { ZooidUpdate } from './ZooidDocument';
 import type { ZooidId, Zooid } from './ZooidManager';
 
 type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
@@ -12,7 +12,7 @@ export default class ZooidElement {
 
   constructor(attrs: ZoidAttribues) {
     this._attrs = attrs;
-    this._elementDidUpdate = () => Promise.resolve(this);
+    this.detachParent();
   }
 
   update(newAttrs?: ZoidAttribues): Promise<ZooidElement> {
@@ -33,5 +33,10 @@ export default class ZooidElement {
       await elementDidUpdate({ id: this._id, ...this._attrs });
       return this;
     };
+  }
+
+  detachParent() {
+    this._id = undefined;
+    this._elementDidUpdate = () => Promise.resolve(this);
   }
 }

@@ -6,13 +6,57 @@ import createReconciler from './createReconciler';
 import ZooidDocument from './ZooidDocument';
 import ZooidManager from './ZooidManager';
 
-class TestApp extends React.Component<*, *> {
-  getDes(offset: number) {
-    const { dim: [width, height], des:[bottom, left] } = this.props;
-    const defaultBottom = bottom + (width / 2);
-    const defaultLeft = left + (height / 2)
+class TestApp extends React.Component<*, Object> {
+  constructor(props) {
+    super(props);
 
-    return [ defaultBottom + offset, defaultLeft - offset ];
+    this.state = {
+      showOther: false,
+      precentFromBottom: .25,
+      precentFromRight: .25,
+      intervalId: null,
+    };
+  }
+
+  componentDidMount() {
+    const intervalId = setInterval(() => {
+      this.setState((state) => {
+        const precentFromBottom = state.precentFromBottom + .1;
+        const precentFromRight = state.precentFromRight - .1;
+
+        return {
+          showOther: !state.showOther,
+          precentFromBottom: (
+            precentFromBottom < 1?
+              precentFromBottom:
+              precentFromBottom - 1
+          ),
+          precentFromRight: (
+            precentFromRight > 0?
+              precentFromRight:
+              precentFromRight + 1
+          ),
+        };
+      });
+    }, 1500);
+
+    this.setState({ intervalId });
+  }
+
+  componentWillUnmount() {
+    if (!this.state.intervalId !== 'number') return;
+
+    clearInterval(this.state.intervalId);
+    this.setState({ intervalId: null });
+  }
+
+  getDes(offset: number) {
+    const { precentFromBottom, precentFromRight } = this.state;
+    const { dim: [width, height], des:[bottom, right] } = this.props;
+    const defaultBottom = bottom + (width * precentFromBottom);
+    const defaultRight = right + (height * precentFromRight)
+
+    return [ defaultBottom + offset, defaultRight - offset ];
   }
 
   render() {
@@ -21,6 +65,10 @@ class TestApp extends React.Component<*, *> {
         <zooid des={this.getDes(0.05)} col={[255, 0, 0]} />
         <zooid des={this.getDes(0)} col={[0, 255, 0]} />
         <zooid des={this.getDes(-0.05)} col={[0, 0, 255]} />
+        {this.state.showOther?
+          <zooid des={this.getDes(0.1)} col={[127, 255, 0]} />:
+          null
+        }
       </>
     );
   }

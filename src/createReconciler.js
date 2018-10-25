@@ -34,18 +34,21 @@ export default function createReconciler() {
     createTextInstance() {
       throw new Error('No text instances are possiable for react-swarm-ui');
     },
-    getPublicInstance() {
-      //console.log('getPublicInstance');
-    },
-    appendInitialChild(parent, child) {
-      //console.log('appendInitialChild');
-      //TODO, append child to the parent
-    },
     finalizeInitialChildren(instance, type, props) {
       //console.log('finalizeInitialChildren');
     },
+    appendInitialChild(parent, child) {
+      //TODO, add 'ZooidAreaElement' class for this
+      throw new Error('NYI: ZooidAreaElement');
+    },
     appendChildToContainer(zooidDocument, child) {
       zooidDocument.appendChild(child);
+    },
+    removeChildFromContainer(zooidDocument, child) {
+      zooidDocument.removeChild(child);
+    },
+    getPublicInstance(...args) {
+      console.log('getPublicInstance', args);
     },
     supportsMutation: true,
     prepareUpdate(instance, type, oldProps, newProps) {
@@ -54,15 +57,15 @@ export default function createReconciler() {
     },
     appendChild(parent, child) {
       //console.log('appendChild');
-      //TODO, append child to the parent
+      parent.appendChild(child);
     },
     removeChild(parent, child) {
       //console.log('removeChild');
-      //TODO, remove the child
+      parent.removeChild(child);
     },
-    commitUpdate(instance, oldProps, newProps) {
-      //console.log('commitUpdate', { instance, oldProps, newProps });
-      //TODO, update the instance
+    commitUpdate(instance, _, type, oldProps, newProps) {
+      //console.log('commitUpdate', { type, attrs: instance._attrs, newProps });
+      instance.update(newProps);
     },
   });
 }
