@@ -1,7 +1,10 @@
 // @flow
 import createReactReconciler from 'react-reconciler';
 
+import ZooidElement from './ZooidElement';
+
 export default function createReconciler() {
+  let id = 0;
   const rootHostContext = {};
   const childHostContext = {};
 
@@ -22,10 +25,12 @@ export default function createReconciler() {
     shouldSetTextContent() {
       return false;
     },
-    createInstance(type, props) {
-      console.log('createInstance', type);
-      //TODO, create zooid element
-      return { type, props };
+    createInstance(type, props, zooidManager) {
+      if (type !== 'zooid') {
+        throw new Error('Only zooid type elements can be used');
+      }
+
+      return new ZooidElement(zooidManager, { id: id++, ...props });
     },
     createTextInstance() {
       throw new Error('No text instances are possiable for react-swarm-ui');
@@ -40,9 +45,10 @@ export default function createReconciler() {
     finalizeInitialChildren(instance, type, props) {
       console.log('finalizeInitialChildren');
     },
-    appendChildToContainer: (container, child) => {
-      console.log('appendChildToContainer', container, child);
-      //TODO, append child to the parent
+    appendChildToContainer(zooidManager, child) {
+      console.log('appendChildToContainer', child);
+      
+      child.update();
     },
     supportsMutation: true,
     prepareUpdate(instance, type, oldProps, newProps) {

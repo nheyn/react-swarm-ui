@@ -34,6 +34,7 @@ type State = {
 
 export default class ZooidManager {
   _state: State;
+  _isUpdating: boolean;
   _subscribers: Array<(zm: ZooidManager) => void>;
   _ws: void | WebSocket;
 
@@ -44,6 +45,7 @@ export default class ZooidManager {
       dim: [0, 0],
       zoo: [],
     };
+    this._isUpdating = false;
     this._subscribers = [];
     this._ws = undefined;
 
@@ -66,23 +68,45 @@ export default class ZooidManager {
   }
 
   setZooids(
-    update: Array<Zooid> | (zooids: Array<Zooid>) => Array<Zooid>
+    update: (zooids: Array<Zooid>) => Array<Zooid>
   ): Promise<Array<Zooid>> {
     return new Promise((resolve, reject) => {
       // If the socket hasn't been connected, wait for the first message
       const ws = this._ws;
       if (ws === undefined) {
-        const unSub = this.subscribe(() => {
-          unSub();
+        const unsubscribe = this.subscribe(() => {
+          unsubscribe();
           resolve(this.setZooids(update));
         });
         return;
       }
 
+      // If there is an update already started
+      if (this._isUpdating) {
+        const unsubscribe = this.subscribe(() => {
+          if (this._isUpdating) return;
+
+          unsubscribe();
+          resolve(this.setZooids(update));
+        });
+        return;
+      }
+
+      // Peform updates
       const zoo = Array.isArray(update)? update: update(this._state.zoo);
+
+      this._isUpdating = true;
       ws.send(JSON.stringify({ ...this._state, zoo }), (err) => {
-        if (err) reject(err);
-        else resolve(zoo);
+        this._isUpdating = false;
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        const unsubscribe = this.subscribe(() => {
+          unsubscribe();
+          resolve(this._state.zoo);
+        });
       });
     });
   }
