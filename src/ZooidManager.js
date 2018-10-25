@@ -1,7 +1,7 @@
 // @flow
 import WebSocket from "ws";
 
-type ZooidId = number;
+export type ZooidId = number;
 
 type ZooidStatus = number; //TODO, replace with union
 
