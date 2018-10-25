@@ -76,7 +76,7 @@ class TestApp extends React.Component<*, Object> {
 
 const webSocket = new WebSocket('http://localhost:9092');
 const zooidManager = new ZooidManager(webSocket);
-const unsubscribe = zooidManager.subscribe(() => {
+zooidManager.subscribe((_, unsubscribe) => {
   unsubscribe();
 
   const zooidDocument = new ZooidDocument(zooidManager);

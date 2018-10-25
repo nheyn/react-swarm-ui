@@ -33,9 +33,12 @@ type State = {
   zoo: Array<Zooid>,
 };
 
+type Unsubscribe = () => any;
+type Subscriber = (zm: ZooidManager, unsub: Unsubscribe) => any;
+
 export default class ZooidManager {
   _state: State;
-  _subscribers: Array<(zm: ZooidManager) => void>;
+  _subscribers: Array<() => void>;
   _ws: void | WebSocket;
 
   _isUpdating: bool;
@@ -60,7 +63,7 @@ export default class ZooidManager {
         this._state = JSON.parse(message);
         if (this._state.nb < 1) return;
 
-        this._subscribers.forEach((subscriber) => subscriber(this));
+        this._subscribers.forEach((subscriber) => subscriber());
       });
     });
   }
@@ -102,7 +105,7 @@ export default class ZooidManager {
       const ws = this._ws;
       if (ws === undefined) {
         this._nextUpdate = update;
-        const unsubscribe = this.subscribe(() => {
+        this.subscribe((_, unsubscribe) => {
           unsubscribe();
           resolve(this.setZooids((zooids) => zooids));
         });
@@ -119,7 +122,7 @@ export default class ZooidManager {
 
         // Wait for updated _state
         setTimeout(() => {
-          const unsubscribe = this.subscribe(() => {
+          this.subscribe((_, unsubscribe) => {
             unsubscribe();
             resolve(this._state.zoo);
 
@@ -136,14 +139,22 @@ export default class ZooidManager {
     });
   }
 
-  subscribe(subscriber: (zm: ZooidManager) => any): () => any {
+  subscribe(subscriber: Subscriber): Unsubscribe {
+    let wrappedSubscriber;
+    let unsubscribe = () => {};
+    wrappedSubscriber = () => {
+      subscriber(this, unsubscribe);
+    };
+    unsubscribe = () => {
+      this._subscribers = this._subscribers.filter(
+        (sub) => sub !== wrappedSubscriber
+      );
+    };
+
     this._subscribers = [
       ...this._subscribers,
-      subscriber,
+      wrappedSubscriber,
     ];
-
-    return () => {
-      this._subscribers = this._subscribers.filter((sub) => sub !== subscriber);
-    };
+    return unsubscribe;
   }
 }
