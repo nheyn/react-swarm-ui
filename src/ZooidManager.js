@@ -35,9 +35,11 @@ type State = {
 
 export default class ZooidManager {
   _state: State;
-  _isUpdating: boolean;
   _subscribers: Array<(zm: ZooidManager) => void>;
   _ws: void | WebSocket;
+
+  _isUpdating: bool;
+  _nextUpdate: void | (zooids: Array<Zooid>) => Array<Zooid>;
 
   constructor(ws: WebSocket) {
     this._state = {
@@ -46,9 +48,11 @@ export default class ZooidManager {
       dim: [0, 0],
       zoo: [],
     };
-    this._isUpdating = false;
     this._subscribers = [];
     this._ws = undefined;
+
+    this._isUpdating = false;
+    this._nextUpdate = undefined;
 
     ws.on('open', () => {
       this._ws = ws;
@@ -81,42 +85,53 @@ export default class ZooidManager {
     update: (zooids: Array<Zooid>) => Array<Zooid>
   ): Promise<Array<Zooid>> {
     return new Promise((resolve, reject) => {
+      // If there is an update already started
+      if (this._isUpdating) {
+        const queuedUpdates = this._nextUpdate;
+        if (typeof queuedUpdates === 'function') {
+          this._nextUpdate = (zooids) => update(queuedUpdates(zooids))
+        }
+        else {
+          this._nextUpdate = update;
+        }
+        return;
+      }
+      this._isUpdating = true;
+
       // If the socket hasn't been connected, wait for the first message
       const ws = this._ws;
       if (ws === undefined) {
+        this._nextUpdate = update;
         const unsubscribe = this.subscribe(() => {
           unsubscribe();
-          resolve(this.setZooids(update));
-        });
-        return;
-      }
-
-      // If there is an update already started
-      if (this._isUpdating) {
-        const unsubscribe = this.subscribe(() => {
-          if (this._isUpdating) return;
-
-          unsubscribe();
-          resolve(this.setZooids(update));
+          resolve(this.setZooids((zooids) => zooids));
         });
         return;
       }
 
       // Peform updates
       const zoo = Array.isArray(update)? update: update(this._state.zoo);
-
-      this._isUpdating = true;
       ws.send(JSON.stringify({ ...this._state, zoo }), (err) => {
-        this._isUpdating = false;
         if (err) {
           reject(err);
           return;
         }
 
-        const unsubscribe = this.subscribe(() => {
-          unsubscribe();
-          resolve(this._state.zoo);
-        });
+        // Wait for updated _state
+        setTimeout(() => {
+          const unsubscribe = this.subscribe(() => {
+            unsubscribe();
+            resolve(this._state.zoo);
+
+            // 'Unlock' setZooids(...)
+            const nextUpdate = this._nextUpdate;
+            this._nextUpdate = undefined;
+            this._isUpdating = false;
+
+            // Peform all updates waiting in the queue
+            if (typeof nextUpdate === 'function') this.setZooids(nextUpdate);
+          });
+        }, 1000 / 60);
       });
     });
   }
