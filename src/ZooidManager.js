@@ -54,6 +54,8 @@ export default class ZooidManager {
       this._ws = ws;
       this._ws.on('message', (message) => {
         this._state = JSON.parse(message);
+        if (this._state.nb < 1) return;
+
         this._subscribers.forEach((subscriber) => subscriber(this));
       });
     });
@@ -65,6 +67,14 @@ export default class ZooidManager {
 
   getNumberOfZooids(): number {
     return this._state.nb;
+  }
+
+  getAllIds(): Array<number> {
+    return this._state.zoo.map(({ id }) => id);
+  }
+
+  getZooid(id: number): void | Zooid {
+    return this._state.zoo.find((zooid) => zooid.id === id);
   }
 
   setZooids(

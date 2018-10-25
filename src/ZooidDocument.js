@@ -18,6 +18,16 @@ export default class ZooidDocument {
   }
 
   appendChild(zooidElement: ZooidElement) {
+    //TODO, move this outside of this call (so it doesn't use _zooidManager.subscribers as a queue)
+    if (this._zooidManager.getNumberOfZooids() === 0) {
+      const unsubscribe = this._zooidManager.subscribe(() => {
+        unsubscribe();
+
+        this.appendChild(zooidElement);
+      });
+      return;
+    }
+
     let childEl = this._children.find((el) => el === zooidElement);
     if (childEl === undefined) {
       this._children = [
@@ -37,16 +47,16 @@ export default class ZooidDocument {
 
   _getAvailableZooidId(): number {
     const nextId = this._i;
-    /*if (nextId > this._zooidManager.getNumberOfZooids()) {
+    if (nextId > this._zooidManager.getNumberOfZooids()) {
       throw new Error(
         `Cannot render more then the available ${
           this._zooidManager.getNumberOfZooids()
         } zooids at once`
       );
     }
-    else {*/
+    else {
       this._i += 1;
-    //}
+    }
 
     return nextId;
   }

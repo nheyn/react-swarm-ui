@@ -16,5 +16,6 @@ updateContainer(
   </>,
   createContainer(zooidDocument, false),
   null,
+  //NOTE, this callback does not wait for ZooidManager to finish setting up
   () => console.log('rendered:', zooidManager._state)
 );
