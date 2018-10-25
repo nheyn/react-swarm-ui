@@ -19,7 +19,7 @@ manager.subscribe(async () => {
     } catch(err) {
       console.error(err);
     }
-});*/
+})
 import ZooidElement from './ZooidElement';
 import ZooidManager from './ZooidManager';
 
@@ -30,4 +30,36 @@ const element = new ZooidElement(manager, {
   col: [0, 0, 1],
 });
 
-element.update().then(console.log, console.error);
+element.update().then(console.log, console.error);*/
+
+import React from 'react';
+import createReconciler from './createReconciler';
+
+const r = createReconciler();
+const c = r.createContainer({ test: 'element' }, false);
+
+r.updateContainer(
+  <a>
+    <b test="string" />
+    <c test={{ json: 'object' }}>
+      <d />
+      <e />
+    </c>
+  </a>,
+  c,
+  null,
+  () =>  {
+    console.log('------about to update------');
+    r.updateContainer(
+      <a>
+        <b test="new string" />
+        <c test={{ json: 'object' }} />
+        <d />
+        <e />
+      </a>,
+      c,
+      null,
+      () => console.log('done')
+    );
+  }
+);

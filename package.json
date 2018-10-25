@@ -25,10 +25,16 @@
     "@babel/plugin-transform-runtime": "^7.1.0",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-flow": "^7.0.0",
+    "@babel/preset-react": "^7.0.0",
     "flow-bin": "^0.83.0",
-    "ws": "^6.1.0"
+    "react": "^16.6.0"
+  },
+  "peerDependencies": {
+    "react": "^16.0.0"
   },
   "dependencies": {
-    "@babel/runtime": "^7.1.2"
+    "@babel/runtime": "^7.1.2",
+    "react-reconciler": "^0.16.0",
+    "ws": "^6.1.0"
   }
 }
