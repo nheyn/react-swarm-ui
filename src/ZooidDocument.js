@@ -1,20 +1,21 @@
 // @flow
 import type ZooidElement from './ZooidElement';
-import type ZooidManager, { ZooidId, Zooid } from './ZooidManager';
+import type ZooidIdTracker, { ZooidId } from './ZooidIdTracker';
+import type ZooidManager, { Zooid } from './ZooidManager';
 
 export type ZooidUpdate = $Shape<Zooid> & { id: ZooidId };
 
 export default class ZooidDocument {
   _zooidManager: ZooidManager;
+  _idTracker: ZooidIdTracker;
   _children: Array<ZooidElement>;
 
-  //TODO, replace this
-  _i: number;
-
-  constructor(zooidManager: ZooidManager) {
+  constructor(zooidManager: ZooidManager, idTracker: ZooidIdTracker) {
     this._zooidManager = zooidManager;
+    this._idTracker = idTracker;
     this._children = [];
-    this._i = 0;
+
+    this._idTracker.subscribeTo(this._zooidManager);
   }
 
   appendChild(zooidElement: ZooidElement) {
@@ -27,7 +28,7 @@ export default class ZooidDocument {
       childEl = zooidElement;
 
       childEl.attachParent(
-        this._getAvailableZooidId(),
+        this._idTracker.getId(),
         (updates) => this._updateZooid(updates)
       );
     }
@@ -39,25 +40,16 @@ export default class ZooidDocument {
     this._children.filter((child) => {
       if (child !== zooidElement) return true;
 
-      child.detachParent();
+      const oldId = child.detachParent();
+      this._idTracker.giveId(oldId);
+
       return false;
     });
   }
 
-  _getAvailableZooidId(): number {
-    const nextId = this._i;
-    if (nextId > this._zooidManager.getNumberOfZooids()) {
-      throw new Error(
-        `Cannot render more then the available ${
-          this._zooidManager.getNumberOfZooids()
-        } zooids at once`
-      );
-    }
-    else {
-      this._i += 1;
-    }
-
-    return nextId;
+  close() {
+    this._idTracker.unsubscribe();
+    this._zooidManager.close();
   }
 
   async _updateZooid(updates: ZooidUpdate): Promise<ZooidDocument> {
