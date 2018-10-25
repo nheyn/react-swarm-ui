@@ -1,7 +1,7 @@
 # React SwarmUI
 *A javascript/react wrapper that will connect with SwarmUI over WebSockets*
 
-__IN PROGRESS: Only contains connections to ZooidManagerV2, no React yet__
+__IN PROGRESS: It can only render static zooid positions__
 
 ### Install
 First download the SwarmUI repo, it will contain the ZooidManagerV2 software in the /Software/Applications/ folder.
@@ -18,7 +18,7 @@ npm run build
 ```
 
 ### Test App
-Currently this only has a basic program that allows the user to move the Zooids (by default they go back to their own position). To start this program, open ZooidManagerV2 and run:
+Currently this only has a basic program that renders the jsx in the index.js file. To start this program, open ZooidManagerV2 and run:
 ```
 npm run start
 ```
