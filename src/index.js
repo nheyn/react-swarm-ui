@@ -1,11 +1,7 @@
 // @flow
 import React from 'react';
-import WebSocket from 'ws';
 
-import createReconciler from './createReconciler';
-import ZooidDocument from './ZooidDocument';
-import ZooidIdTracker from './ZooidIdTracker';
-import ZooidManager from './ZooidManager';
+import createRender from './createRender';
 
 class TestApp extends React.Component<*, Object> {
   constructor(props) {
@@ -75,18 +71,9 @@ class TestApp extends React.Component<*, Object> {
   }
 }
 
-const webSocket = new WebSocket('http://localhost:9092');
-const zooidManager = new ZooidManager(webSocket);
-zooidManager.subscribe((_, unsubscribe) => {
-  unsubscribe();
-
-  const zooidIdTracker = new ZooidIdTracker();
-  const zooidDocument = new ZooidDocument(zooidManager, zooidIdTracker);
-  const { updateContainer, createContainer } = createReconciler();
-  updateContainer(
-    <TestApp dim={zooidManager.getTableDimentions()} des={[0, 0]} />,
-    createContainer(zooidDocument, false),
-    null,
-    () => console.log('initial render complete')
-  );
-});
+const render = createRender();
+render(
+  <TestApp dim={[0.5, 0.5]} des={[0, 0]} />, //TODO, need to get dim somehow
+  'http://localhost:9092',
+  () => console.log('intial render complete')
+);
