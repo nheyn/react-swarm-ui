@@ -11,7 +11,7 @@ type ZooidPosition = [number, number];
 
 type ZooidColor = [number, number, number];
 
-type Zooid = {
+export type Zooid = {
   id: number,
   siz: number,
   ang: number,
