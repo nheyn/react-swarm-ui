@@ -7,9 +7,9 @@ __IN PROGRESS:__
 To connect to a swarm, the [SwarmUI](https://github.com/ShapeLab/SwarmUI) repo needs to be downloaded. It contains the required ZooidManagerV2 software in the /Software/Applications/ folder.
 
 #### Installation
-To install this module use:
+To install this module (and its peerDependencies) use:
 ```
-npm install --save react-swarm-ui
+npm install --save react-swarm-ui react ws
 ```
 
 #### Usage
