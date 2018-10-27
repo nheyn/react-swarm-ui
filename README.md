@@ -21,8 +21,14 @@ import React from 'react';
 function AZooid() {
   return (
     <zooid
-      des={[<distance from right edge>, <distance from left edge>]}
-      col={[<r>, <g>, <b>]}
+      destination={{
+        right: <distance from right edge>,
+        bottom: <distance from left edge>
+      }}
+      color={[<r>, <g>, <b>]}
+      onChangePosition=((zooidData) => {
+        // Called anytime the zooids position does not match its destination
+      })
     />
   );
 }
@@ -46,10 +52,12 @@ render(
 )
 ```
 
-To run the app, first open the ZooidManagerV2 app. Then run the application in node. The default web socket that ZooidManagerV2 listens to is http://localhost:9092.
+To run the app, first open the ZooidManagerV2 app, and select 'ENABLE WEB' in
+the controls. The default web socket is http://localhost:9092, but can be
+by the same controls. Then run your react-swarm-ui application in node.
 
 ### TODO LIST
-* Add even handling, so the app can react to movement on the table
-* Change ```<zooid />``` prop names, so they are "human readable"
+* Add additional event handlers (like onStartMove/onEndMove)
+* Send an 'Event' instead of the zooid to the even handlers
 * Add ```<area></area>``` element type, so relative positioning can be used
 * Add "id" prop to ```<zooid />```, so the app can assure the same zooid is reused
