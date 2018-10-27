@@ -17,7 +17,6 @@ export default class ZooidEventHandler<T> {
 
   // External Public API
   attachTo(element: ZooidELement) {
-    // $FlowFixMe
     const zooidManager = element.getZooidManagerFor(this);
 
     this.detach();

@@ -2,6 +2,7 @@
 import ZooidElement from './ZooidElement';
 
 import type { ZooidId, Zooid } from './types';
+import type ZooidManager from './ZooidManager';
 
 type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
 
@@ -43,14 +44,16 @@ export default class ZooidElementBot extends ZooidElement {
     this._id = undefined;
   }
 
-  updateZooids(zooids: Array<Zooid>): Array<Zooid> {
-    if (typeof this._id !== 'number') return zooids;
+  async updateZooids(zooidManager: ZooidManager): Promise<void> {
+    const { _id: id } = this;
+    if (typeof id !== 'number') return;
 
-    const _return = zooids.map((zooid) => {
-      if (zooid.id !== this._id) return zooid;
+    await zooidManager.setZooids((zooids) => {
+      return zooids.map((zooid) => {
+        if (zooid.id !== id) return zooid;
 
-      return { ...zooid, ...this._attrs };
+        return { ...zooid, ...this._attrs };
+      });
     });
-    return _return;
   }
 }

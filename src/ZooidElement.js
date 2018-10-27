@@ -1,4 +1,6 @@
 // @flow
+
+import type ZooidEventHandler from './ZooidEventHandler';
 import type ZooidManager from './ZooidManager';
 import type { Zooid } from './types';
 
@@ -55,14 +57,25 @@ export default class ZooidElement {
     this.elementDidRemoveChild(child);
   }
 
+  getZooidManagerFor<T>(
+    child: ZooidElement | ZooidEventHandler<T>
+  ): ZooidManager {
+    if (this._zooidManager === undefined) {
+      throw new Error(
+        'Unable to get child tracker until attached to its own parent'
+      );
+    }
+
+    // TODO, update to get a tracker that will keep id in the same subtrees
+    return this._zooidManager;
+  }
+
   // Internal Subclass API
   async commitUpdates(): Promise<ZooidElement> {
     if (this._zooidManager === undefined) return this;
 
-    // $FlowFixMe
-    await this._zooidManager.setZooids((zooids) => {
-      return this.updateZooids(zooids);
-    });
+    await this.updateZooids(this._zooidManager);
+
     return this;
   }
 
@@ -107,10 +120,8 @@ export default class ZooidElement {
     //      been detached
   }
 
-  updateZooids(zooids: Array<Zooid>): Array<Zooid> {
-    //NOTE, override in subclass with all the updates it performs to the zooids
-
-    throw new Error('The updateZooids(...) method must be overriden');
+  updateZooids(zooidManager: ZooidManager): any {
+    //NOTE, override in subclass to perform updates to the zooids
   }
 
   // Private methods
@@ -118,7 +129,7 @@ export default class ZooidElement {
     this.elementWillAttachToParent(parent);
 
     peformAttach();
-    this._zooidManager = parent._getZooidManagerFor(this);
+    this._zooidManager = parent.getZooidManagerFor(this);
 
     this.commitUpdates();
     this.elementDidAttachToParent(parent);
@@ -132,16 +143,5 @@ export default class ZooidElement {
 
     this.commitUpdates();
     this.elementDidDetachFromParent();
-  }
-
-  _getZooidManagerFor(child: ZooidElement): ZooidManager {
-    if (this._zooidManager === undefined) {
-      throw new Error(
-        'Unable to get child tracker until attached to its own parent'
-      );
-    }
-
-    // TODO, update to get a tracker that will keep id in the same subtrees
-    return this._zooidManager;
   }
 }

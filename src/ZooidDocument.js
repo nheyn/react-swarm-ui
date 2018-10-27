@@ -10,8 +10,4 @@ export default class ZooidDocument extends ZooidElement {
 
     this._zooidManager = zooidManager;
   }
-
-  updateZooids(zooids: Array<Zooid>): Array<Zooid> {
-    return zooids;
-  }
 }
