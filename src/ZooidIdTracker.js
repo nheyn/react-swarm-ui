@@ -1,8 +1,7 @@
 // @flow
 
 import type ZooidManager from './ZooidManager';
-
-export type ZooidId = number;
+import type { ZooidId } from './types';
 
 export default class ZooidIdTracker {
   _stack: Array<ZooidId>;
@@ -26,14 +25,21 @@ export default class ZooidIdTracker {
     return top;
   }
 
-  giveId(id: ZooidId) {
+  releaseId(id: ZooidId) {
     this._stack = [id, ...this._stack];
   }
 
   subscribeTo(zooidManager: ZooidManager) {
-    this._stack = zooidManager.getAllIds();
+    this._stack = this._getAllIdsFrom(zooidManager);
+
+    //TODO, make this update if number of zooid's change
+    //      need to figure out how when some ids are already out
+    let first = true;
     this._unsubscribe = zooidManager.subscribe(() => {
-      //TODO, make this update if number of zooid's change
+      if (!first) return;
+      first = false;
+
+      this._stack = this._getAllIdsFrom(zooidManager);
     });
   }
 
@@ -41,5 +47,15 @@ export default class ZooidIdTracker {
     if (typeof this._unsubscribe !== 'function') return;
 
     this._unsubscribe();
+  }
+
+  _getAllIdsFrom(zooidManager: ZooidManager): Array<ZooidId> {
+    const numberOfZooids = zooidManager.getNumberOfZooids();
+
+    let allIds = [];
+    for (let i=0; i<numberOfZooids; i++) {
+      allIds = [...allIds, i];
+    }
+    return allIds;
   }
 }

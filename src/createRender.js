@@ -16,43 +16,46 @@ export default function createRender() {
     socket: string | WebSocket,
     callback?: () => void
   ) => {
+    // Check socket to see if it has already has a container
     let webSocket;
     if (typeof socket === 'string') {
       const update = updatesForUrl.get(socket);
       if (typeof update === 'function') {
         update(root, callback);
+        return;
       }
-      else {
-        webSocket = new WebSocket(socket);
-      }
+
+      webSocket = new WebSocket(socket);
     }
     else {
       if (typeof socket.__updateContainer === 'function') {
         socket.__updateContainer(root, callback);
+        return;
       }
-      else {
-        webSocket = socket;
-      }
-    }
-    if (webSocket === undefined) return;
 
-    const zooidManager = new ZooidManager(webSocket);
+      webSocket = socket;
+    }
+
+    // Initial Reconciler Container
+    const zooidIdTracker = new ZooidIdTracker();
+    const zooidManager = new ZooidManager(webSocket, zooidIdTracker);
+    const zooidDocument = new ZooidDocument(zooidManager);
+
+    const { updateContainer, createContainer } = createReconciler();
+    const container = createContainer(zooidDocument, false);
+    const update = (r, cb) => updateContainer(r, container, null, cb);
+
+    // Save container for re-rendering
+    if (typeof socket === 'string') {
+      updatesForUrl.set(socket, update);
+    }
+    else {
+      socket.__updateContainer = update;
+    }
+
+    // Wait until zooidManager is connect for the initial render
     zooidManager.subscribe((_, unsubscribe) => {
       unsubscribe();
-
-      const zooidIdTracker = new ZooidIdTracker();
-      const zooidDocument = new ZooidDocument(zooidManager, zooidIdTracker);
-      const { updateContainer, createContainer } = createReconciler();
-
-      const container = createContainer(zooidDocument, false);
-      const update = (r, cb) => updateContainer(r, container, null, cb);
-      if (typeof socket === 'string') {
-        updatesForUrl.set(socket, update);
-      }
-      else {
-        socket.__updateContainer = update;
-      }
-
       update(root, callback);
     });
   };

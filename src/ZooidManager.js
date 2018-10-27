@@ -1,29 +1,15 @@
 // @flow
 
 import type WebSocket from 'ws';
-import type { ZooidId } from './ZooidIdTracker';
-
-type ZooidStatus = number; //TODO, replace with union
-
-type ZooidDimentions = [number, number];
-
-type ZooidPosition = [number, number];
-
-type ZooidColor = [number, number, number];
-
-export type Zooid = {
-  id: number,
-  siz: number,
-  ang: number,
-  pos: ZooidPosition,
-  des: ZooidPosition,
-  sta: ZooidStatus,
-  her: boolean,
-  col: ZooidColor,
-  act: boolean,
-  rea: boolean,
-  vel: number,
-};
+import type ZooidIdTracker from './ZooidIdTracker';
+import type {
+  ZooidId,
+  ZooidStatus,
+  ZooidDimentions,
+  ZooidPosition,
+  ZooidColor,
+  Zooid,
+} from './types';
 
 type State = {
   ass: number,
@@ -36,14 +22,16 @@ type Unsubscribe = () => any;
 type Subscriber = (zm: ZooidManager, unsub: Unsubscribe) => any;
 
 export default class ZooidManager {
+  _ws: void | WebSocket;
+  _idTracker: ZooidIdTracker;
   _state: State;
   _subscribers: Array<() => void>;
-  _ws: void | WebSocket;
-
   _isUpdating: bool;
   _nextUpdate: void | (zooids: Array<Zooid>) => Array<Zooid>;
 
-  constructor(ws: WebSocket) {
+  constructor(ws: WebSocket, idTracker: ZooidIdTracker) {
+    this._ws = undefined;
+    this._idTracker = idTracker;
     this._state = {
       ass: 0,
       nb: 0,
@@ -51,8 +39,6 @@ export default class ZooidManager {
       zoo: [],
     };
     this._subscribers = [];
-    this._ws = undefined;
-
     this._isUpdating = false;
     this._nextUpdate = undefined;
 
@@ -65,6 +51,7 @@ export default class ZooidManager {
         this._subscribers.forEach((subscriber) => subscriber());
       });
     });
+    this._idTracker.subscribeTo(this);
   }
 
   getTableDimentions(): ZooidDimentions {
@@ -75,12 +62,16 @@ export default class ZooidManager {
     return this._state.nb;
   }
 
-  getAllIds(): Array<number> {
-    return this._state.zoo.map(({ id }) => id);
-  }
-
   getZooid(id: number): void | Zooid {
     return this._state.zoo.find((zooid) => zooid.id === id);
+  }
+
+  getAvailableId(): ZooidId {
+    return this._idTracker.getId();
+  }
+
+  releaseId(id: ZooidId) {
+    this._idTracker.releaseId(id);
   }
 
   setZooids(
@@ -158,8 +149,9 @@ export default class ZooidManager {
   }
 
   close() {
-    if (this._ws === undefined) return;
+    this._idTracker.unsubscribe();
 
+    if (this._ws === undefined) return;
     this._ws.close();
   }
 }
