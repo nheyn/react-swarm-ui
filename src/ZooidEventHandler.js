@@ -1,9 +1,9 @@
 // @flow
 
-import type ZooidELement from './ZooidELement';
+import type ZooidElement from './ZooidElement';
 import type ZooidManager from './ZooidManager';
 
-type ZooidEvent<T> = T;
+export type ZooidEvent<T> = T;
 type ZooidEventFunc<T> = (e: ZooidEvent<T>) => any;
 
 export default class ZooidEventHandler<T> {
@@ -16,24 +16,48 @@ export default class ZooidEventHandler<T> {
   }
 
   // External Public API
-  attachTo(element: ZooidELement) {
-    const zooidManager = element.getZooidManagerFor(this);
+  attachTo(element: ZooidElement) {
+    this.onEventWillAttach(element);
 
+    const zooidManager = element.getZooidManagerFor(this);
     this.detach();
     this._unsubscribe = zooidManager.subscribe(() => {
       if (!this.shouldTriggerEvent(zooidManager)) return;
 
       this._onEvent(this.createEvent(zooidManager));
     });
+
+    this.onEventDidAttach(element);
   }
 
   detach() {
-    if (typeof this._unsubscribe !== 'function') return;
+    this.onEventWillDetach();
 
+    if (typeof this._unsubscribe !== 'function') return;
     this._unsubscribe();
+
+    this.onEventDidDetach();
   }
 
   // Methods for Subclass to override
+  onEventWillAttach(element: ZooidElement) {
+    //NOTE, override in subclass check if this event can be added to the given
+    //      element, throw an error for react-reconclier to catch if not
+  }
+
+  onEventDidAttach(element: ZooidElement) {
+    //NOTE, override in subclass check to finish attaching the given element
+  }
+
+  onEventWillDetach() {
+    //NOTE, override in subclass check if this event can be detached, throw an
+    //      error for react-reconclier to catch if not
+  }
+
+  onEventDidDetach() {
+    //NOTE, override in subclass check to finish detaching
+  }
+
   shouldTriggerEvent(zooidManager: ZooidManager) {
     //NOTE, override in subclass check if event should be triggered
 
