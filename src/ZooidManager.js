@@ -1,29 +1,14 @@
 // @flow
 
 import type WebSocket from 'ws';
-import type { ZooidId } from './ZooidIdTracker';
-
-type ZooidStatus = number; //TODO, replace with union
-
-type ZooidDimentions = [number, number];
-
-type ZooidPosition = [number, number];
-
-type ZooidColor = [number, number, number];
-
-export type Zooid = {
-  id: number,
-  siz: number,
-  ang: number,
-  pos: ZooidPosition,
-  des: ZooidPosition,
-  sta: ZooidStatus,
-  her: boolean,
-  col: ZooidColor,
-  act: boolean,
-  rea: boolean,
-  vel: number,
-};
+import type {
+  ZooidId,
+  ZooidStatus,
+  ZooidDimentions,
+  ZooidPosition,
+  ZooidColor,
+  Zooid,
+} from './types';
 
 type State = {
   ass: number,

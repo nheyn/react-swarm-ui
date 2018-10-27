@@ -1,51 +1,60 @@
 // @flow
+import ZooidElementBase from './ZooidElementBase';
 
-import type { ZooidUpdate } from './ZooidDocument';
-import type { ZooidId } from './ZooidIdTracker';
-import type { Zooid } from './ZooidManager';
+import type { ZooidId, Zooid } from './types';
 
 type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
 
-export default class ZooidElement {
-  _attrs:  ZoidAttribues;
+export default class ZooidElement extends ZooidElementBase {
+  _attrs: ZoidAttribues;
   _id: void | ZooidId;
-  _elementDidUpdate: () => Promise<ZooidElement>;
 
   constructor(attrs: ZoidAttribues) {
+    super();
+
     this._attrs = attrs;
     this._id = undefined;
-    this._elementDidUpdate = () => Promise.resolve(this);
   }
 
-  update(newAttrs?: ZoidAttribues): Promise<ZooidElement> {
-    if (newAttrs !== undefined) this._attrs = newAttrs;
-
-    return this._elementDidUpdate();
+  update(newAttrs: ZoidAttribues) {
+    this._attrs = newAttrs;
+    this.commitUpdates();
   }
 
-  attachParent(
-    id: ZooidId,
-    elementDidUpdate: (updates: ZooidUpdate) => Promise<any>
-  ) {
-    this._id = id;
-    this._elementDidUpdate = async () => {
-      if (typeof this._id !== 'number') return this;
-      if (typeof this._elementDidUpdate !== 'function') return this;
-
-      await elementDidUpdate({ id: this._id, ...this._attrs });
-      return this;
-    };
+  elementWillAppendChild(child: ZooidElementBase) {
+    throw new Error('Zooid element cannot have children attached');
   }
 
-  detachParent(): number {
-    const id = this._id;
-    if (typeof id !== 'number') {
-      throw new Error('Unable to detachParent(..) element with no parent');
+  elementDidAttachToParent(parent: ZooidElementBase) {
+    console.log('elementWillDetachFromParent');
+
+    if (this._idTracker === undefined) {
+      throw new Error('ZooidElement not correctly attached to parent');
     }
 
-    this._id = undefined;
-    this._elementDidUpdate = () => Promise.resolve(this);
+    this._id = this._idTracker.getId();
+  }
 
-    return id;
+  elementWillDetachFromParent() {
+    if (this._idTracker === undefined || typeof this._id !== 'number') {
+      throw new Error('ZooidElement not correctly attached to parent');
+    }
+
+    this._idTracker.giveId(this._id);
+    this._id = undefined;
+  }
+
+  updateZooids(zooids: Array<Zooid>): Array<Zooid> {
+    if (typeof this._id !== 'number') {
+      throw new Error(
+        'Unable to update zooid element before attached to parent'
+      );
+    }
+
+    return zooids.map((zooid) => {
+      if (zooid.id !== this._id) return zooid;
+
+      return { ...zooid, ...this._attrs };
+    });
   }
 }

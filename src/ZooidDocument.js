@@ -1,66 +1,38 @@
 // @flow
-import type ZooidElement from './ZooidElement';
-import type ZooidIdTracker, { ZooidId } from './ZooidIdTracker';
-import type ZooidManager, { Zooid } from './ZooidManager';
+import ZooidElementBase from './ZooidElementBase';
 
-export type ZooidUpdate = $Shape<Zooid> & { id: ZooidId };
+import type { Zooid } from './types';
+import type ZooidIdTracker from './ZooidIdTracker';
+import type ZooidManager  from './ZooidManager';
 
-export default class ZooidDocument {
+export default class ZooidDocument extends ZooidElementBase {
   _zooidManager: ZooidManager;
-  _idTracker: ZooidIdTracker;
-  _children: Array<ZooidElement>;
 
-  constructor(zooidManager: ZooidManager, idTracker: ZooidIdTracker) {
+  constructor(idTracker: ZooidIdTracker, zooidManager: ZooidManager) {
+    super();
+
     this._zooidManager = zooidManager;
+
     this._idTracker = idTracker;
-    this._children = [];
+    this._sendUpdates = async () => {
+      console.log('ZooidDocument._sendUpdates');
+      await this._zooidManager.setZooids(
+        (zooids) => this.getZooidUpdates(zooids)
+      );
+      return this;
+    };
 
     this._idTracker.subscribeTo(this._zooidManager);
   }
 
-  appendChild(zooidElement: ZooidElement) {
-    let childEl = this._children.find((el) => el === zooidElement);
-    if (childEl === undefined) {
-      this._children = [
-        ...this._children,
-        zooidElement,
-      ];
-      childEl = zooidElement;
-
-      childEl.attachParent(
-        this._idTracker.getId(),
-        (updates) => this._updateZooid(updates)
-      );
-    }
-
-    childEl.update();
-  }
-
-  removeChild(zooidElement: ZooidElement) {
-    this._children.filter((child) => {
-      if (child !== zooidElement) return true;
-
-      const oldId = child.detachParent();
-      this._idTracker.giveId(oldId);
-
-      return false;
-    });
+  updateZooids(zooids: Array<Zooid>): Array<Zooid> {
+    return zooids;
   }
 
   close() {
-    this._idTracker.unsubscribe();
     this._zooidManager.close();
-  }
 
-  async _updateZooid(updates: ZooidUpdate): Promise<ZooidDocument> {
-    await this._zooidManager.setZooids((zooids) => zooids.map(
-      (zooid) => {
-        if (zooid.id !== updates.id) return zooid;
-
-        return { ...zooid, ...updates };
-      },
-    ));
-
-    return this;
+    if (this._idTracker === undefined) return;
+    this._idTracker.unsubscribe();
   }
 }

@@ -64,7 +64,8 @@ export default function createReconciler() {
       parent.removeChild(child);
     },
     commitUpdate(instance, _, type, oldProps, newProps) {
-      //console.log('commitUpdate', { type, attrs: instance._attrs, newProps });
+      if (!(instance instanceof ZooidElement)) return;
+
       instance.update(newProps);
     },
   });
