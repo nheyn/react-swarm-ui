@@ -1,7 +1,7 @@
 // @flow
 import createReactReconciler from 'react-reconciler';
 
-import ZooidElement from './ZooidElement';
+import ZooidElementBot from './ZooidElementBot';
 
 export default function createReconciler() {
   const rootHostContext = {};
@@ -29,7 +29,7 @@ export default function createReconciler() {
         throw new Error('Only zooid type elements can be used');
       }
 
-      return new ZooidElement(props);
+      return new ZooidElementBot(props);
     },
     createTextInstance() {
       throw new Error('No text instances are possiable for react-swarm-ui');
@@ -64,7 +64,7 @@ export default function createReconciler() {
       parent.removeChild(child);
     },
     commitUpdate(instance, _, type, oldProps, newProps) {
-      if (!(instance instanceof ZooidElement)) return;
+      if (!(instance instanceof ZooidElementBot)) return;
 
       instance.update(newProps);
     },

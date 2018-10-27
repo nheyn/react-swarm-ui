@@ -1,56 +1,147 @@
 // @flow
-import ZooidElementBase from './ZooidElementBase';
+import type ZooidManager from './ZooidManager';
+import type { Zooid } from './types';
 
-import type { ZooidId, Zooid } from './types';
+export default class ZooidElement {
+  _children: Array<ZooidElement>;
+  _zooidManager: void | ZooidManager;
 
-type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
-
-export default class ZooidElement extends ZooidElementBase {
-  _attrs: ZoidAttribues;
-  _id: void | ZooidId;
-
-  constructor(attrs: ZoidAttribues) {
-    super();
-
-    this._attrs = attrs;
-    this._id = undefined;
+  constructor() {
+    this._children = [];
+    this._zooidManager = undefined;
   }
 
-  update(newAttrs: ZoidAttribues) {
-    this._attrs = newAttrs;
+  // External Public API
+  appendChild(child: ZooidElement) {
+    if (this._children.includes(child)) {
+      throw new Error('Unable append child that has already been appended');
+    }
+    this.elementWillAppendChild(child);
+
+    let didAttach = false;
+    child._attachParent(this, () => {
+      this._children = [
+        ...this._children,
+        child,
+      ];
+      didAttach = true;
+    });
+    if (!didAttach) throw new Error('Child was unable to attach to its parent');
+
     this.commitUpdates();
+    this.elementDidAppendChild(child);
   }
 
-  elementWillAppendChild(child: ZooidElementBase) {
-    throw new Error('Zooid element cannot have children attached');
-  }
+  removeChild(child: ZooidElement) {
+    if (!this._children.includes(child)) {
+      throw new Error('Unable remove child that has not been appended');
+    }
+    this.elementWillRemoveChild(child);
 
-  elementDidAttachToParent(parent: ZooidElementBase) {
-    if (this._zooidManager === undefined) {
-      throw new Error('ZooidElement not correctly attached to parent');
+    let didDetach = false;
+    child._detachParent(() => {
+      this._children = this._children.filter((existingChild) => {
+        if (existingChild !== child) return true;
+
+        didDetach = true;
+        return false;
+      });
+    });
+    if (!didDetach) {
+      throw new Error('Child was unable to be removed from its parent');
     }
 
-    this._id = this._zooidManager.getAvailableId();
     this.commitUpdates();
+    this.elementDidRemoveChild(child);
+  }
+
+  // Internal Subclass API
+  async commitUpdates(): Promise<ZooidElement> {
+    if (this._zooidManager === undefined) return this;
+
+    // $FlowFixMe
+    await this._zooidManager.setZooids((zooids) => {
+      return this.updateZooids(zooids);
+    });
+    return this;
+  }
+
+  // Methods for Subclass to override
+  elementWillAppendChild(child: ZooidElement) {
+    //NOTE, override in subclass to check the child can be added, throw an Error
+    //      for react-reconclier to catch if not
+  }
+
+  elementDidAppendChild(child: ZooidElement) {
+    //NOTE, override in subclass to make any changes after the child has
+    //      been attached
+  }
+
+  elementWillRemoveChild(child: ZooidElement) {
+    //NOTE, override in subclass to check the child can be removed, throw an
+    //      Error for react-reconclier to catch if not
+  }
+
+  elementDidRemoveChild(child: ZooidElement) {
+    //NOTE, override in subclass to make any changes after the child has
+    //      been removed
+  }
+
+  elementWillAttachToParent(parent: ZooidElement) {
+    //NOTE, override in subclass check parent can be attached, throw an Error
+    //      for react-reconclier to catch if not
+  }
+
+  elementDidAttachToParent(parent: ZooidElement) {
+    //NOTE, override in subclass to make any changes after the parent has
+    //      been attached
   }
 
   elementWillDetachFromParent() {
-    if (this._zooidManager === undefined || typeof this._id !== 'number') {
-      throw new Error('ZooidElement not correctly attached to parent');
-    }
+    //NOTE, override in subclass check parent can be detached, throw an Error
+    //      for react-reconclier to catch if not
+  }
 
-    this._zooidManager.releaseId(this._id);
-    this._id = undefined;
+  elementDidDetachFromParent() {
+    //NOTE, override in subclass to make any changes after the parent has
+    //      been detached
   }
 
   updateZooids(zooids: Array<Zooid>): Array<Zooid> {
-    if (typeof this._id !== 'number') return zooids;
+    //NOTE, override in subclass with all the updates it performs to the zooids
 
-    const _return = zooids.map((zooid) => {
-      if (zooid.id !== this._id) return zooid;
+    throw new Error('The updateZooids(...) method must be overriden');
+  }
 
-      return { ...zooid, ...this._attrs };
-    });
-    return _return;
+  // Private methods
+  _attachParent(parent: ZooidElement, peformAttach: () => void) {
+    this.elementWillAttachToParent(parent);
+
+    peformAttach();
+    this._zooidManager = parent._getZooidManagerFor(this);
+
+    this.commitUpdates();
+    this.elementDidAttachToParent(parent);
+  }
+
+  _detachParent(peformDetach: () => void) {
+    this.elementWillDetachFromParent();
+
+    this._zooidManager = undefined;
+    peformDetach();
+
+    this.commitUpdates();
+    this.elementDidDetachFromParent();
+  }
+
+  _getZooidManagerFor(child: ZooidElement): ZooidManager {
+    if (this._zooidManager === undefined) {
+      throw new Error(
+        'Unable to get child tracker until attached to its own parent'
+      );
+    }
+
+    // TODO, update to get a tracker that will keep id in the same subtrees
+    return this._zooidManager;
   }
 }

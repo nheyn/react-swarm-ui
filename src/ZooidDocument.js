@@ -1,10 +1,10 @@
 // @flow
-import ZooidElementBase from './ZooidElementBase';
+import ZooidElement from './ZooidElement';
 
 import type { Zooid } from './types';
 import type ZooidManager  from './ZooidManager';
 
-export default class ZooidDocument extends ZooidElementBase {
+export default class ZooidDocument extends ZooidElement {
   constructor(zooidManager: ZooidManager) {
     super();
 
