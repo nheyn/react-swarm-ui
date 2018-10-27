@@ -29,7 +29,7 @@ export default function createReconciler() {
         throw new Error('Only zooid type elements can be used');
       }
 
-      return new ZooidElementBot(props);
+      return new ZooidElementBot(props, {});
     },
     createTextInstance() {
       throw new Error('No text instances are possiable for react-swarm-ui');
@@ -66,7 +66,7 @@ export default function createReconciler() {
     commitUpdate(instance, _, type, oldProps, newProps) {
       if (!(instance instanceof ZooidElementBot)) return;
 
-      instance.update(newProps);
+      instance.update(newProps, {});
     },
   });
 }

@@ -2,23 +2,30 @@
 import ZooidElement from './ZooidElement';
 
 import type { ZooidId, Zooid } from './types';
+import type ZooidEventHandler from './ZooidEventHandler';
 import type ZooidManager from './ZooidManager';
 
-type ZoidAttribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
+type Attribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
+type EventHandlers = {
+  onChangePosition?: ZooidEventHandler<Zooid>,
+};
 
 export default class ZooidElementBot extends ZooidElement {
-  _attrs: ZoidAttribues;
+  _attrs: Attribues;
+  _eventHandlers: EventHandlers;
   _id: void | ZooidId;
 
-  constructor(attrs: ZoidAttribues) {
+  constructor(attrs: Attribues, eventHandlers: EventHandlers) {
     super();
 
     this._attrs = attrs;
+    this._eventHandlers = eventHandlers;
     this._id = undefined;
   }
 
-  update(newAttrs: ZoidAttribues) {
+  update(newAttrs: Attribues, eventHandlers: EventHandlers) {
     this._attrs = newAttrs;
+    this._eventHandlers = eventHandlers;
     this.commitUpdates();
   }
 
@@ -44,7 +51,13 @@ export default class ZooidElementBot extends ZooidElement {
     this._id = undefined;
   }
 
-  async updateZooids(zooidManager: ZooidManager): Promise<void> {
+  updateZooids(zooidManager: ZooidManager): Promise<void> {
+    this._attachAllEventHandlers();
+    
+    return this._updateZooids(zooidManager);
+  }
+
+  async _updateZooids(zooidManager: ZooidManager): Promise<void> {
     const { _id: id } = this;
     if (typeof id !== 'number') return;
 
@@ -55,5 +68,18 @@ export default class ZooidElementBot extends ZooidElement {
         return { ...zooid, ...this._attrs };
       });
     });
+  }
+
+  _attachAllEventHandlers() {
+    this._detachAllEvents();
+
+    if (this._eventHandlers.onChangePosition === undefined) return;
+    this._eventHandlers.onChangePosition.attachTo(this);
+  }
+
+  _detachAllEvents() {
+    if (this._eventHandlers.onChangePosition === undefined) return;
+
+    this._eventHandlers.onChangePosition.detach();
   }
 }
