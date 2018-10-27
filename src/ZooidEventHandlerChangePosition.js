@@ -20,17 +20,33 @@ extends ZooidEventHandler<Zooid> {
   }
 
   onEventDidAttach(element: ZooidElement) {
-    // $FlowFixMe - this is already checked in
-    const botElement: ZooidElementBot = element;
+    if (!(element instanceof ZooidElementBot)) {
+      throw new Error(
+        'ZooidEventHandlerChangePosition can only attach to ZooidElementBot'
+      );
+    }
 
-    this._id = botElement.getId();
+    this._id = element.getId();
   }
 
   onEventDidDetach() {
     this._id = undefined;
   }
 
+  shouldTriggerEvent(zooidManager: ZooidManager) {
+    const zooid = this._getZooidFrom(zooidManager);
+
+    const diffX = Math.abs(zooid.pos[0] - zooid.des[0]);
+    const diffY = Math.abs(zooid.pos[1] - zooid.des[1]);
+
+    return diffX > zooid.siz || diffY > zooid.siz;
+  }
+
   createEvent(zooidManager: ZooidManager): ZooidEvent<Zooid> {
+    return this._getZooidFrom(zooidManager);
+  }
+
+  _getZooidFrom(zooidManager: ZooidManager): Zooid {
     const { _id: id } = this;
     if (typeof id !== 'number') throw new Error('Event not correctly attached');
 

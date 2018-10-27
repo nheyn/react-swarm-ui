@@ -1,5 +1,6 @@
 // @flow
 import ZooidElement from './ZooidElement';
+import ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
 
 import type { ZooidId, Zooid } from './types';
 import type ZooidEventHandler from './ZooidEventHandler';
@@ -21,6 +22,14 @@ export default class ZooidElementBot extends ZooidElement {
     this._attrs = attrs;
     this._eventHandlers = eventHandlers;
     this._id = undefined;
+  }
+
+  getId(): ZooidId {
+    if (typeof this._id !== 'number') {
+      throw new Error('ZooidElement not correctly attached to parent');
+    }
+
+    return this._id;
   }
 
   update(newAttrs: Attribues, eventHandlers: EventHandlers) {
@@ -53,7 +62,7 @@ export default class ZooidElementBot extends ZooidElement {
 
   updateZooids(zooidManager: ZooidManager): Promise<void> {
     this._attachAllEventHandlers();
-    
+
     return this._updateZooids(zooidManager);
   }
 
@@ -71,6 +80,8 @@ export default class ZooidElementBot extends ZooidElement {
   }
 
   _attachAllEventHandlers() {
+    if (typeof this._id !== 'number') return;
+
     this._detachAllEvents();
 
     if (this._eventHandlers.onChangePosition === undefined) return;
@@ -82,4 +93,59 @@ export default class ZooidElementBot extends ZooidElement {
 
     this._eventHandlers.onChangePosition.detach();
   }
+}
+
+
+export function getAttrsFrom(props: Object): Attribues {
+  let attrs = {};
+  if (props.destination !== undefined && props.destination !== null) {
+    if (typeof props.destination.right !== 'number') {
+      throw new Error(
+        'To define a destination, the distance from the right must be provided'
+      );
+    }
+    if (typeof props.destination.bottom !== 'number') {
+      throw new Error(
+        'To define a destination, the distance from the bottom must be provided'
+      );
+    }
+
+    attrs = {
+      ...attrs,
+      des: [props.destination.right, props.destination.bottom],
+    };
+  }
+
+  if (props.color !== undefined && props.color !== null) {
+    if (!Array.isArray(props.color) || props.color.length !== 3) {
+      throw new Error(
+        'The color must be an array of [r, b, c] colors'
+      );
+    }
+
+    attrs = {
+      ...attrs,
+      col: props.color,
+    };
+  }
+
+  return attrs;
+}
+
+export function getEventHandlersFrom(props: Object): EventHandlers {
+  let eventHandlers = {};
+  if (props.onChangePosition !== undefined && props.onChangePosition !== null) {
+    if (typeof props.onChangePosition !== 'function') {
+      throw new Error('The onChangePosition must be a function');
+    }
+
+    eventHandlers = {
+      ...eventHandlers,
+      onChangePosition: new ZooidEventHandlerChangePosition(
+        props.onChangePosition
+      ),
+    };
+  }
+
+  return  eventHandlers;
 }
