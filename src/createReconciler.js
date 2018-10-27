@@ -48,7 +48,7 @@ export default function createReconciler() {
       zooidDocument.removeChild(child);
     },
     getPublicInstance(...args) {
-      console.log('getPublicInstance', args);
+      //console.log('getPublicInstance', args);
     },
     supportsMutation: true,
     prepareUpdate(instance, type, oldProps, newProps) {

@@ -1,16 +1,14 @@
 // @flow
-import type ZooidIdTracker from './ZooidIdTracker';
+import type ZooidManager from './ZooidManager';
 import type { Zooid } from './types';
 
 export default class ZooidElementBase {
   _children: Array<ZooidElementBase>;
-  _idTracker: void | ZooidIdTracker;
-  _sendUpdates: void | () => Promise<ZooidElementBase>;
+  _zooidManager: void | ZooidManager;
 
   constructor() {
     this._children = [];
-    this._idTracker = undefined;
-    this._sendUpdates = undefined;
+    this._zooidManager = undefined;
   }
 
   // External Public API
@@ -59,19 +57,13 @@ export default class ZooidElementBase {
 
   // Internal Subclass API
   async commitUpdates(): Promise<ZooidElementBase> {
-    if (typeof this._sendUpdates !== 'function') return this;
+    if (this._zooidManager === undefined) return this;
 
-    await this._sendUpdates();
+    // $FlowFixMe
+    await this._zooidManager.setZooids((zooids) => {
+      return this.updateZooids(zooids);
+    });
     return this;
-  }
-
-  getZooidUpdates(zooids: Array<Zooid>): Array<Zooid> {
-    return this.updateZooids(
-      this._children.reduce(
-        (currZooids, child) => child.getZooidUpdates(currZooids),
-        zooids
-      )
-    );
   }
 
   // Methods for Subclass to override
@@ -126,32 +118,30 @@ export default class ZooidElementBase {
     this.elementWillAttachToParent(parent);
 
     peformAttach();
+    this._zooidManager = parent._getZooidManagerFor(this);
 
-    this._idTracker = parent._getChildIdTracker(this);
-    this._sendUpdates = () => parent.commitUpdates();
-
+    this.commitUpdates();
     this.elementDidAttachToParent(parent);
   }
 
   _detachParent(peformDetach: () => void) {
     this.elementWillDetachFromParent();
 
-    this._idTracker = undefined;
-    this._sendUpdates = undefined;
-
+    this._zooidManager = undefined;
     peformDetach();
 
+    this.commitUpdates();
     this.elementDidDetachFromParent();
   }
 
-  _getChildIdTracker(child: ZooidElementBase): ZooidIdTracker {
-    if (this._idTracker === undefined) {
+  _getZooidManagerFor(child: ZooidElementBase): ZooidManager {
+    if (this._zooidManager === undefined) {
       throw new Error(
         'Unable to get child tracker until attached to its own parent'
       );
     }
 
     // TODO, update to get a tracker that will keep id in the same subtrees
-    return this._idTracker;
+    return this._zooidManager;
   }
 }

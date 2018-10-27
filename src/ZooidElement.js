@@ -26,35 +26,31 @@ export default class ZooidElement extends ZooidElementBase {
   }
 
   elementDidAttachToParent(parent: ZooidElementBase) {
-    console.log('elementWillDetachFromParent');
-
-    if (this._idTracker === undefined) {
+    if (this._zooidManager === undefined) {
       throw new Error('ZooidElement not correctly attached to parent');
     }
 
-    this._id = this._idTracker.getId();
+    this._id = this._zooidManager.getAvailableId();
+    this.commitUpdates();
   }
 
   elementWillDetachFromParent() {
-    if (this._idTracker === undefined || typeof this._id !== 'number') {
+    if (this._zooidManager === undefined || typeof this._id !== 'number') {
       throw new Error('ZooidElement not correctly attached to parent');
     }
 
-    this._idTracker.giveId(this._id);
+    this._zooidManager.releaseId(this._id);
     this._id = undefined;
   }
 
   updateZooids(zooids: Array<Zooid>): Array<Zooid> {
-    if (typeof this._id !== 'number') {
-      throw new Error(
-        'Unable to update zooid element before attached to parent'
-      );
-    }
+    if (typeof this._id !== 'number') return zooids;
 
-    return zooids.map((zooid) => {
+    const _return = zooids.map((zooid) => {
       if (zooid.id !== this._id) return zooid;
 
       return { ...zooid, ...this._attrs };
     });
+    return _return;
   }
 }

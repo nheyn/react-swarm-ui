@@ -38,8 +38,8 @@ export default function createRender() {
 
     // Initial Reconciler Container
     const zooidIdTracker = new ZooidIdTracker();
-    const zooidManager = new ZooidManager(webSocket);
-    const zooidDocument = new ZooidDocument(zooidIdTracker, zooidManager);
+    const zooidManager = new ZooidManager(webSocket, zooidIdTracker);
+    const zooidDocument = new ZooidDocument(zooidManager);
 
     const { updateContainer, createContainer } = createReconciler();
     const container = createContainer(zooidDocument, false);
