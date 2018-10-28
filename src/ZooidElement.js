@@ -74,7 +74,7 @@ export default class ZooidElement {
   async commitUpdates(): Promise<ZooidElement> {
     if (this._zooidManager === undefined) return this;
 
-    await this.updateZooids(this._zooidManager);
+    await this.updateElement(this._zooidManager);
 
     return this;
   }
@@ -120,7 +120,7 @@ export default class ZooidElement {
     //      been detached
   }
 
-  updateZooids(zooidManager: ZooidManager): any {
+  updateElement(zooidManager: ZooidManager): any {
     //NOTE, override in subclass to perform updates to the zooids
   }
 

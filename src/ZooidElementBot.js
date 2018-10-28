@@ -67,7 +67,7 @@ export default class ZooidElementBot extends ZooidElement {
     this._detachAllEventHandlers();
   }
 
-  updateZooids(zooidManager: ZooidManager): Promise<void> {
+  updateElement(zooidManager: ZooidManager): Promise<void> {
     this._attachAllEventHandlers();
 
     return this._updateZooids(zooidManager);
