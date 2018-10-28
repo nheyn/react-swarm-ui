@@ -1,13 +1,13 @@
 // @flow
 import ZooidElement from './ZooidElement';
-import ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
-import ZooidEventHandlerMove, { MOVE_TYPE } from './ZooidEventHandlerMove';
 
 import type { ZooidId, Zooid } from './types';
+import type ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
+import type ZooidEventHandlerMove from './ZooidEventHandlerMove';
 import type ZooidManager from './ZooidManager';
 
-type Attribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
-type EventHandlers = {
+export type Attribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
+export type EventHandlers = {
   onChangePosition?: ZooidEventHandlerChangePosition,
   onStartMove?: ZooidEventHandlerMove,
   onEndMove?: ZooidEventHandlerMove,
@@ -99,87 +99,4 @@ export default class ZooidElementBot extends ZooidElement {
       this._eventHandlers[name].detach();
     }
   }
-}
-
-
-export function getAttrsFrom(props: Object): Attribues {
-  let attrs = {};
-  if (props.destination !== undefined && props.destination !== null) {
-    if (typeof props.destination.right !== 'number') {
-      throw new Error(
-        'To define a destination, the distance from the right must be provided'
-      );
-    }
-    if (typeof props.destination.bottom !== 'number') {
-      throw new Error(
-        'To define a destination, the distance from the bottom must be provided'
-      );
-    }
-
-    attrs = {
-      ...attrs,
-      des: [props.destination.right, props.destination.bottom],
-    };
-  }
-
-  if (props.color !== undefined && props.color !== null) {
-    if (!Array.isArray(props.color) || props.color.length !== 3) {
-      throw new Error(
-        'The color must be an array of [r, b, c] colors'
-      );
-    }
-
-    attrs = {
-      ...attrs,
-      col: props.color,
-    };
-  }
-
-  return attrs;
-}
-
-export function getEventHandlersFrom(props: Object): EventHandlers {
-  let eventHandlers = {};
-  if (props.onChangePosition !== undefined && props.onChangePosition !== null) {
-    if (typeof props.onChangePosition !== 'function') {
-      throw new Error('The onChangePosition must be a function');
-    }
-
-    eventHandlers = {
-      ...eventHandlers,
-      onChangePosition: new ZooidEventHandlerChangePosition(
-        props.onChangePosition
-      ),
-    };
-  }
-
-  if (props.onStartMove !== undefined && props.onStartMove !== null) {
-    if (typeof props.onStartMove !== 'function') {
-      throw new Error('The onStartMove must be a function');
-    }
-
-    eventHandlers = {
-      ...eventHandlers,
-      onStartMove: new ZooidEventHandlerMove(
-        props.onStartMove,
-        MOVE_TYPE.START
-      ),
-    };
-  }
-
-  if (props.onEndMove !== undefined && props.onEndMove !== null) {
-    if (typeof props.onEndMove !== 'function') {
-      throw new Error('The onEndMove must be a function');
-    }
-
-    eventHandlers = {
-      ...eventHandlers,
-      onEndMove: new ZooidEventHandlerMove(
-        props.onEndMove,
-        MOVE_TYPE.END
-      ),
-    };
-  }
-
-  return  eventHandlers;
 }
