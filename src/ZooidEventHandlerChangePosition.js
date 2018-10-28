@@ -10,6 +10,7 @@ import type ZooidManager from './ZooidManager';
 export default class ZooidEventHandlerChangePosition
 extends ZooidEventHandler<Zooid> {
   _id: void | ZooidId;
+  _pos: *;
 
   onEventWillAttach(element: ZooidElement) {
     if (!(element instanceof ZooidElementBot)) {
@@ -27,19 +28,28 @@ extends ZooidEventHandler<Zooid> {
     }
 
     this._id = element.getId();
+
+    const zooid = this._getZooidFrom(element.getZooidManagerFor(this));
+    this._pos = zooid.pos;
   }
 
   onEventDidDetach() {
     this._id = undefined;
+    this._pos = undefined;
   }
 
   shouldTriggerEvent(zooidManager: ZooidManager) {
+    const { _pos: pos } = this;
+    if (!Array.isArray(pos)) throw new Error('Event not correctly attached');
+
     const zooid = this._getZooidFrom(zooidManager);
+    this._pos = zooid.pos;
 
-    const diffX = Math.abs(zooid.pos[0] - zooid.des[0]);
-    const diffY = Math.abs(zooid.pos[1] - zooid.des[1]);
+    const posDiffX = Math.abs(zooid.pos[0] - pos[0]);
+    const posDiffY = Math.abs(zooid.pos[1] - pos[1]);
+    const minDiff = zooid.siz / 2;
 
-    return diffX > zooid.siz || diffY > zooid.siz;
+    return posDiffX > minDiff || posDiffY > minDiff;
   }
 
   createEvent(zooidManager: ZooidManager): ZooidEvent<Zooid> {

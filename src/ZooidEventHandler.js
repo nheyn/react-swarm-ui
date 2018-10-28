@@ -4,7 +4,9 @@ import type ZooidElement from './ZooidElement';
 import type ZooidManager from './ZooidManager';
 
 export type ZooidEvent<T> = T;
-type ZooidEventFunc<T> = (e: ZooidEvent<T>) => any;
+export type ZooidEventFunc<T> = (e: ZooidEvent<T>) => any;
+
+let c = 0;
 
 export default class ZooidEventHandler<T> {
   _onEvent: ZooidEventFunc<T>;
@@ -31,10 +33,13 @@ export default class ZooidEventHandler<T> {
   }
 
   detach() {
+    const { _unsubscribe: unsubscribe } = this;
+    if (typeof unsubscribe !== 'function') return;
+
     this.onEventWillDetach();
 
-    if (typeof this._unsubscribe !== 'function') return;
-    this._unsubscribe();
+    unsubscribe();
+    this._unsubscribe = undefined;
 
     this.onEventDidDetach();
   }

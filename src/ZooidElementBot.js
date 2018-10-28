@@ -1,14 +1,16 @@
 // @flow
 import ZooidElement from './ZooidElement';
 import ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
+import ZooidEventHandlerMove, { MOVE_TYPE } from './ZooidEventHandlerMove';
 
 import type { ZooidId, Zooid } from './types';
-import type ZooidEventHandler from './ZooidEventHandler';
 import type ZooidManager from './ZooidManager';
 
 type Attribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
 type EventHandlers = {
-  onChangePosition?: ZooidEventHandler<Zooid>,
+  onChangePosition?: ZooidEventHandlerChangePosition,
+  onStartMove?: ZooidEventHandlerMove,
+  onEndMove?: ZooidEventHandlerMove,
 };
 
 export default class ZooidElementBot extends ZooidElement {
@@ -34,7 +36,10 @@ export default class ZooidElementBot extends ZooidElement {
 
   update(newAttrs: Attribues, eventHandlers: EventHandlers) {
     this._attrs = newAttrs;
+
+    this._detachAllEventHandlers();
     this._eventHandlers = eventHandlers;
+
     this.commitUpdates();
   }
 
@@ -58,6 +63,8 @@ export default class ZooidElementBot extends ZooidElement {
 
     this._zooidManager.releaseId(this._id);
     this._id = undefined;
+
+    this._detachAllEventHandlers();
   }
 
   updateZooids(zooidManager: ZooidManager): Promise<void> {
@@ -82,16 +89,15 @@ export default class ZooidElementBot extends ZooidElement {
   _attachAllEventHandlers() {
     if (typeof this._id !== 'number') return;
 
-    this._detachAllEvents();
-
-    if (this._eventHandlers.onChangePosition === undefined) return;
-    this._eventHandlers.onChangePosition.attachTo(this);
+    for (let name in this._eventHandlers) {
+      this._eventHandlers[name].attachTo(this);
+    }
   }
 
-  _detachAllEvents() {
-    if (this._eventHandlers.onChangePosition === undefined) return;
-
-    this._eventHandlers.onChangePosition.detach();
+  _detachAllEventHandlers() {
+    for (let name in this._eventHandlers) {
+      this._eventHandlers[name].detach();
+    }
   }
 }
 
@@ -143,6 +149,34 @@ export function getEventHandlersFrom(props: Object): EventHandlers {
       ...eventHandlers,
       onChangePosition: new ZooidEventHandlerChangePosition(
         props.onChangePosition
+      ),
+    };
+  }
+
+  if (props.onStartMove !== undefined && props.onStartMove !== null) {
+    if (typeof props.onStartMove !== 'function') {
+      throw new Error('The onStartMove must be a function');
+    }
+
+    eventHandlers = {
+      ...eventHandlers,
+      onStartMove: new ZooidEventHandlerMove(
+        props.onStartMove,
+        MOVE_TYPE.START
+      ),
+    };
+  }
+
+  if (props.onEndMove !== undefined && props.onEndMove !== null) {
+    if (typeof props.onEndMove !== 'function') {
+      throw new Error('The onEndMove must be a function');
+    }
+
+    eventHandlers = {
+      ...eventHandlers,
+      onEndMove: new ZooidEventHandlerMove(
+        props.onEndMove,
+        MOVE_TYPE.END
       ),
     };
   }
