@@ -10,9 +10,9 @@ import type ZooidManager from './ZooidManager';
 export default class ZooidEventHandlerChangePosition
 extends ZooidEventHandler<Zooid> {
   _id: void | ZooidId;
-  _pos: *;
+  _pos: void | [number, number];
 
-  onEventWillAttach(element: ZooidElement) {
+  onEventWillAttach(element: ZooidElement<any, any, any>) {
     if (!(element instanceof ZooidElementBot)) {
       throw new Error(
         'ZooidEventHandlerChangePosition can only attach to ZooidElementBot'
@@ -20,16 +20,24 @@ extends ZooidEventHandler<Zooid> {
     }
   }
 
-  onEventDidAttach(element: ZooidElement) {
+  onEventDidAttach(element: ZooidElement<any, any, any>) {
     if (!(element instanceof ZooidElementBot)) {
       throw new Error(
         'ZooidEventHandlerChangePosition can only attach to ZooidElementBot'
       );
     }
 
+    if (!element.hasAssignedZooid()) return;
     this._id = element.getId();
 
-    const zooid = this._getZooidFrom(element.getZooidManagerFor(this));
+    //TODO, replace this (so private var doesn't need accssesed)
+    const { _zooidManager: zooidManager } = element;
+    if (zooidManager === undefined) {
+      throw new Error(
+        'Element must be append to element tree for eventHandlers to be attached'
+      );
+    }
+    const zooid = this._getZooidFrom(zooidManager);
     this._pos = zooid.pos;
   }
 
@@ -38,9 +46,9 @@ extends ZooidEventHandler<Zooid> {
     this._pos = undefined;
   }
 
-  shouldTriggerEvent(zooidManager: ZooidManager) {
+  shouldTriggerEvent(zooidManager: ZooidManager): boolean {
     const { _pos: pos } = this;
-    if (!Array.isArray(pos)) throw new Error('Event not correctly attached');
+    if (!Array.isArray(pos)) return false;
 
     const zooid = this._getZooidFrom(zooidManager);
     this._pos = zooid.pos;

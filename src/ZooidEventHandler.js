@@ -18,10 +18,17 @@ export default class ZooidEventHandler<T> {
   }
 
   // External Public API
-  attachTo(element: ZooidElement) {
+  attachTo(element: ZooidElement<any, any, any>) {
+    //TODO, replace this (so private var doesn't need accssesed)
+    const { _zooidManager: zooidManager } = element;
+    if (zooidManager === undefined) {
+      throw new Error(
+        'Element must be append to element tree for eventHandlers to be attached'
+      );
+    }
+
     this.onEventWillAttach(element);
 
-    const zooidManager = element.getZooidManagerFor(this);
     this.detach();
     this._unsubscribe = zooidManager.subscribe(() => {
       if (!this.shouldTriggerEvent(zooidManager)) return;
@@ -45,12 +52,12 @@ export default class ZooidEventHandler<T> {
   }
 
   // Methods for Subclass to override
-  onEventWillAttach(element: ZooidElement) {
+  onEventWillAttach(element: ZooidElement<any, any, any>) {
     //NOTE, override in subclass check if this event can be added to the given
     //      element, throw an error for react-reconclier to catch if not
   }
 
-  onEventDidAttach(element: ZooidElement) {
+  onEventDidAttach(element: ZooidElement<any, any, any>) {
     //NOTE, override in subclass check to finish attaching the given element
   }
 

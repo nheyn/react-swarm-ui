@@ -50,10 +50,14 @@ export default function createReconciler() {
       throw new Error('NYI: ZooidAreaElement');
     },
     appendChildToContainer(zooidDocument, child) {
-      zooidDocument.appendChild(child);
+      zooidDocument.appendChild(child).catch((err) => {
+        console.error('Unable to appendChildToContainer:', err);
+      });
     },
     removeChildFromContainer(zooidDocument, child) {
-      zooidDocument.removeChild(child);
+      zooidDocument.removeChild(child).catch((err) => {
+        console.error('Unable to removeChildFromContainer:', err);
+      });
     },
     getPublicInstance(...args) {
       //console.log('getPublicInstance', args);
@@ -65,19 +69,23 @@ export default function createReconciler() {
     },
     appendChild(parent, child) {
       //console.log('appendChild');
-      parent.appendChild(child);
+      parent.appendChild(child).catch((err) => {
+        console.error('Unable to appendChild:', err);
+      });
     },
     removeChild(parent, child) {
       //console.log('removeChild');
-      parent.removeChild(child);
+      parent.removeChild(child).catch((err) => {
+        console.error('Unable to removeChild:', err);
+      });
     },
     commitUpdate(instance, _, type, oldProps, newProps) {
-      if (!(instance instanceof ZooidElementBot)) return;
-
-      instance.update(
-        getAttrsFrom(newProps),
-        getEventHandlersFrom(newProps)
-      );
+      Promise.all([
+        instance.updateAttrs(getAttrsFrom(newProps)),
+        instance.updateEventHandlers(getEventHandlersFrom(newProps)),
+      ]).catch((err) => {
+        console.error('Unable to commitUpdate:', err);
+      });
     },
   });
 }

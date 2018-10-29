@@ -4,9 +4,9 @@ import ZooidElement from './ZooidElement';
 import type { Zooid } from './types';
 import type ZooidManager  from './ZooidManager';
 
-export default class ZooidDocument extends ZooidElement {
+export default class ZooidDocument extends ZooidElement<any, any, any> {
   constructor(zooidManager: ZooidManager) {
-    super();
+    super({}, {}, []);
 
     this._zooidManager = zooidManager;
   }
