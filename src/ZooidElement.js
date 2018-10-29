@@ -158,6 +158,7 @@ export default class ZooidElement<
     this.elementWillDetachFromParent();
 
     this._zooidManager = undefined;
+    this._detachAllEventHandlers();
     peformDetach();
 
     await this.commitUpdates();

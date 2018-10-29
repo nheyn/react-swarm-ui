@@ -53,8 +53,6 @@ extends ZooidElement<Attribues, EventHandlers, []> {
 
     this._zooidManager.releaseId(this._id);
     this._id = undefined;
-
-    this._detachAllEventHandlers();
   }
 
   async updateElement(): Promise<void> {
