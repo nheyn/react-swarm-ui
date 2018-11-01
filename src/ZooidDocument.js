@@ -1,13 +1,12 @@
 // @flow
 import ZooidElement from './ZooidElement';
 
-import type { Zooid } from './types';
-import type ZooidManager  from './ZooidManager';
+import type ZooidEnvironment  from './ZooidEnvironment';
 
-export default class ZooidDocument extends ZooidElement<any, any, any> {
-  constructor(zooidManager: ZooidManager) {
+export default class ZooidDocument extends ZooidElement<*, *, *> {
+  constructor(zooidEnvironment: ZooidEnvironment) {
     super({}, {}, []);
 
-    this._zooidManager = zooidManager;
+    this._zooidEnvironment = zooidEnvironment;
   }
 }

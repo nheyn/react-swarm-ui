@@ -1,7 +1,7 @@
 // @flow
 import ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
 
-import type { Zooid } from './types';
+import type { ZooidState, ZooidApi } from './types';
 import type ZooidManager from './ZooidManager';
 import type { ZooidEventFunc } from './ZooidEventHandler';
 
@@ -17,15 +17,15 @@ extends ZooidEventHandlerChangePosition {
   _type: MoveType;
   _isMoving: boolean;
 
-  constructor(onEvent: ZooidEventFunc<Zooid>, type: MoveType) {
+  constructor(onEvent: ZooidEventFunc<ZooidState>, type: MoveType) {
     super(onEvent);
 
     this._type = type;
     this._isMoving = false;
   }
 
-  shouldTriggerEvent(zooidManager: ZooidManager): boolean {
-    const hasPositionChanged = super.shouldTriggerEvent(zooidManager);
+  shouldTriggerEvent(zooid: ZooidApi): boolean {
+    const hasPositionChanged = super.shouldTriggerEvent(zooid);
     const shouldBeMoving = this._shouldBeMoving(hasPositionChanged);
 
     let shouldEventFire;

@@ -3,6 +3,7 @@ import WebSocket from 'ws';
 
 import createReconciler from './createReconciler';
 import ZooidDocument from './ZooidDocument';
+import ZooidEnvironment from './ZooidEnvironment';
 import ZooidIdTracker from './ZooidIdTracker';
 import ZooidManager from './ZooidManager';
 
@@ -37,9 +38,10 @@ export default function createRender() {
     }
 
     // Initial Reconciler Container
+    const zooidManager = new ZooidManager(webSocket);
     const zooidIdTracker = new ZooidIdTracker();
-    const zooidManager = new ZooidManager(webSocket, zooidIdTracker);
-    const zooidDocument = new ZooidDocument(zooidManager);
+    const zooidEnvironment = new ZooidEnvironment(zooidManager, zooidIdTracker);
+    const zooidDocument = new ZooidDocument(zooidEnvironment);
 
     const { updateContainer, createContainer } = createReconciler();
     const container = createContainer(zooidDocument, false);

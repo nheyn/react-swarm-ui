@@ -1,8 +1,8 @@
 // @flow
 
+import type { ZooidApi } from './types';
+import type ZooidEnvironment from './ZooidEnvironment';
 import type ZooidEventHandler from './ZooidEventHandler';
-import type ZooidManager from './ZooidManager';
-import type { Zooid } from './types';
 
 export default class ZooidElement<
   AS: $ReadOnly<{}>,
@@ -12,13 +12,13 @@ export default class ZooidElement<
   _attrs: AS;
   _eventHandlers: ES;
   _children: CN;
-  _zooidManager: void | ZooidManager;
+  _zooidEnvironment: void | ZooidEnvironment;
 
   constructor(attrs: AS, eventHandlers: ES, children: CN) {
     this._attrs = attrs;
     this._eventHandlers = eventHandlers;
     this._children = children;
-    this._zooidManager = undefined;
+    this._zooidEnvironment = undefined;
   }
 
   // External Public API
@@ -28,9 +28,12 @@ export default class ZooidElement<
   }
 
   updateEventHandlers(eventHandlers: ES): Promise<ZooidElement<AS, ES, CN>> {
-    this._detachAllEventHandlers();
     this._eventHandlers = eventHandlers;
+    return this.commitUpdates();
+  }
 
+  updateEnvironment(zooidEnvironment: ZooidEnvironment): Promise<ZooidElement<AS, ES, CN>>  {
+    this._zooidEnvironment = zooidEnvironment;
     return this.commitUpdates();
   }
 
@@ -83,12 +86,26 @@ export default class ZooidElement<
 
   // Internal Subclass API
   async commitUpdates(): Promise<ZooidElement<AS, ES, CN>> {
-    if (this._zooidManager === undefined) return this;
+    const { _zooidEnvironment: zooidEnvironment } = this;
+    if (zooidEnvironment === undefined) return this;
 
-    this._attachAllEventHandlers();
+    // Update children
+    await Promise.all(this._children.map(
+      (child) => child.updateEnvironment(zooidEnvironment)
+    ));
+
+    // Update current
     await this.updateElement();
 
     return this;
+  }
+
+  getZooid(): ZooidApi {
+    if (this._zooidEnvironment === undefined) {
+        throw new Error('Cannot get zooid for un-attached element is attached');
+    }
+
+    return this._zooidEnvironment.getZooid();
   }
 
   // Methods for Subclass to override
@@ -144,7 +161,7 @@ export default class ZooidElement<
     this.elementWillAttachToParent(parent);
 
     peformAttach();
-    this._zooidManager = parent._zooidManager;
+    this._zooidEnvironment = parent._zooidEnvironment;
 
     await this.commitUpdates();
     this.elementDidAttachToParent(parent);
@@ -157,25 +174,12 @@ export default class ZooidElement<
   ): Promise<ZooidElement<AS, ES, CN>>  {
     this.elementWillDetachFromParent();
 
-    this._zooidManager = undefined;
-    this._detachAllEventHandlers();
+    this._zooidEnvironment = undefined;
     peformDetach();
 
     await this.commitUpdates();
     this.elementDidDetachFromParent();
 
     return this;
-  }
-
-  _attachAllEventHandlers() {
-    for (let name in this._eventHandlers) {
-      this._eventHandlers[name].attachTo(this);
-    }
-  }
-
-  _detachAllEventHandlers() {
-    for (let name in this._eventHandlers) {
-      this._eventHandlers[name].detach();
-    }
   }
 }

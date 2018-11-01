@@ -5,7 +5,8 @@ import ZooidElementBot from './ZooidElementBot';
 import ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
 import ZooidEventHandlerMove, { MOVE_TYPE } from './ZooidEventHandlerMove';
 
-import type { Attribues, EventHandlers } from './ZooidElementBot';
+import type { ZooidUpdates } from './types';
+import type { EventHandlers } from './ZooidElementBot';
 
 
 export default function createReconciler() {
@@ -90,7 +91,7 @@ export default function createReconciler() {
   });
 }
 
-function getAttrsFrom(props: Object): Attribues {
+function getAttrsFrom(props: Object): ZooidUpdates {
   let attrs = {};
   if (props.destination !== undefined && props.destination !== null) {
     if (typeof props.destination.right !== 'number') {
