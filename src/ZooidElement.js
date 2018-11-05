@@ -32,11 +32,6 @@ export default class ZooidElement<
     return this.commitUpdates();
   }
 
-  updateEnvironment(zooidEnvironment: ZooidEnvironment): Promise<ZooidElement<AS, ES, CN>>  {
-    this._zooidEnvironment = zooidEnvironment;
-    return this.commitUpdates();
-  }
-
   async appendChild(child: ZooidElement<any, any, any>): Promise<ZooidElement<AS, ES, CN>> {
     if (this._children.includes(child)) {
       throw new Error('Unable append child that has already been appended');
@@ -89,13 +84,11 @@ export default class ZooidElement<
     const { _zooidEnvironment: zooidEnvironment } = this;
     if (zooidEnvironment === undefined) return this;
 
-    // Update children
-    await Promise.all(this._children.map(
-      (child) => child.updateEnvironment(zooidEnvironment)
-    ));
-
     // Update current
     await this.updateElement();
+
+    // Update children
+    await Promise.all(this._children.map((child) => child.commitUpdates()));
 
     return this;
   }

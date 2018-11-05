@@ -1,6 +1,11 @@
 // @flow
 
-import type { ZooidApi, ZooidDimentions, ZooidPosition } from './types';
+import type {
+  ZooidApi,
+  ZooidDimentions,
+  ZooidPosition,
+  Unsubscribe
+} from './types';
 import type ZooidIdTracker from './ZooidIdTracker';
 import type ZooidManager from './ZooidManager';
 
@@ -10,19 +15,36 @@ export default class ZooidEnvironment {
   _zooidDimentions: ZooidDimentions;
   _zooidPosition: ZooidPosition;
   _parent: void | ZooidEnvironment;
+  _unsubscribe: void | Unsubscribe;
 
   constructor(
     zooidManager: ZooidManager,
     zooidIdTracker: ZooidIdTracker,
-    zooidDimentions: ZooidDimentions,
-    zooidPosition: ZooidPosition,
+    zooidDimentions?: ZooidDimentions,
+    zooidPosition?: ZooidPosition,
     parentEnvironment?: ZooidEnvironment
   ) {
     this._zooidManager = zooidManager;
     this._zooidIdTracker = zooidIdTracker;
-    this._zooidDimentions = zooidDimentions;
-    this._zooidPosition = zooidPosition;
     this._parent = parentEnvironment;
+    this._unsubscribe = undefined;
+
+    if (Array.isArray(zooidDimentions)) {
+      this._zooidDimentions = zooidDimentions;
+    }
+    else {
+      this._zooidDimentions = this._zooidManager.getTableDimentions();
+      this._unsubscribe = this._zooidManager.subscribe(() => {
+        this._zooidDimentions = this._zooidManager.getTableDimentions();
+      });
+    }
+
+    if (Array.isArray(zooidPosition)) {
+      this._zooidPosition = zooidPosition;
+    }
+    else {
+      this._zooidPosition = [0, 0];
+    }
 
     this._zooidIdTracker.subscribeTo(this._zooidManager);
   }
@@ -86,7 +108,7 @@ export default class ZooidEnvironment {
 
   getPosition(): ZooidPosition {
     if (this._parent === undefined) return this._zooidPosition;
-    const parentPosition = this._parent.getDimentions();
+    const parentPosition = this._parent.getPosition();
 
     return [
       parentPosition[0] + this._zooidPosition[0],
@@ -117,5 +139,8 @@ export default class ZooidEnvironment {
   close() {
     this._zooidIdTracker.unsubscribe();
     this._zooidManager.close();
+
+    if (typeof this._unsubscribe !== 'function') return;
+    this._unsubscribe();
   }
 }
