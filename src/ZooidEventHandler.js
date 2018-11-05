@@ -1,75 +1,79 @@
 // @flow
 
+import type { ZooidId, ZooidApi, Unsubscribe } from './types';
 import type ZooidElement from './ZooidElement';
-import type ZooidManager from './ZooidManager';
+import type ZooidEnvironment from './ZooidEnvironment';
 
 export type ZooidEvent<T> = T;
 export type ZooidEventFunc<T> = (e: ZooidEvent<T>) => any;
 
-let c = 0;
-
 export default class ZooidEventHandler<T> {
   _onEvent: ZooidEventFunc<T>;
-  _unsubscribe: void | () => void;
+  _zooidSubsriptions: { [key:  ZooidId]: Unsubscribe };
 
   constructor(onEvent: ZooidEventFunc<T>) {
     this._onEvent = onEvent;
-    this._unsubscribe = undefined;
+    this._zooidSubsriptions = {};
   }
 
   // External Public API
-  attachTo(element: ZooidElement) {
-    this.onEventWillAttach(element);
+  attachTo(zooid: ZooidApi) {
+    this.onEventWillAttach(zooid);
 
-    const zooidManager = element.getZooidManagerFor(this);
-    this.detach();
-    this._unsubscribe = zooidManager.subscribe(() => {
-      if (!this.shouldTriggerEvent(zooidManager)) return;
+    this.detachFrom(zooid);
+    this._zooidSubsriptions = {
+      ...this._zooidSubsriptions,
+      [zooid.id]: zooid.subscribe(() => {
+        if (!this.shouldTriggerEvent(zooid)) return;
 
-      this._onEvent(this.createEvent(zooidManager));
-    });
+        this._onEvent(this.createEvent(zooid));
+      }),
+    };
 
-    this.onEventDidAttach(element);
+    this.onEventDidAttach(zooid);
   }
 
-  detach() {
-    const { _unsubscribe: unsubscribe } = this;
+  detachFrom(zooid: ZooidApi) {
+    const { [zooid.id]: unsubscribe } = this._zooidSubsriptions;
     if (typeof unsubscribe !== 'function') return;
 
-    this.onEventWillDetach();
+    this.onEventWillDetach(zooid);
 
     unsubscribe();
-    this._unsubscribe = undefined;
+    this._zooidSubsriptions = {
+      ...this._zooidSubsriptions,
+      [zooid.id]: undefined,
+    };
 
-    this.onEventDidDetach();
+    this.onEventDidDetach(zooid);
   }
 
   // Methods for Subclass to override
-  onEventWillAttach(element: ZooidElement) {
+  onEventWillAttach(zooid: ZooidApi) {
     //NOTE, override in subclass check if this event can be added to the given
-    //      element, throw an error for react-reconclier to catch if not
+    //      zooid, throw an error for react-reconclier to catch if not
   }
 
-  onEventDidAttach(element: ZooidElement) {
+  onEventDidAttach(zooid: ZooidApi) {
     //NOTE, override in subclass check to finish attaching the given element
   }
 
-  onEventWillDetach() {
+  onEventWillDetach(zooid: ZooidApi) {
     //NOTE, override in subclass check if this event can be detached, throw an
     //      error for react-reconclier to catch if not
   }
 
-  onEventDidDetach() {
+  onEventDidDetach(zooid: ZooidApi) {
     //NOTE, override in subclass check to finish detaching
   }
 
-  shouldTriggerEvent(zooidManager: ZooidManager) {
+  shouldTriggerEvent(zooid: ZooidApi) {
     //NOTE, override in subclass check if event should be triggered
 
     return false;
   }
 
-  createEvent(zooidManager: ZooidManager): ZooidEvent<T> {
+  createEvent(zooid: ZooidApi): ZooidEvent<T> {
     //NOTE, override in subclass to create an event
 
     throw new Error('The createEvent(...) method must be overriden');

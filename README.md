@@ -23,7 +23,7 @@ function AZooid() {
     <zooid
       destination={{
         right: <distance from right edge>,
-        bottom: <distance from left edge>
+        bottom: <distance from bottom edge>
       }}
       color={[<r>, <g>, <b>]}
       onChangePosition=((zooidData) => {
@@ -38,14 +38,15 @@ function AZooid() {
 
 To render the zooids to the swarm, use:
 ```
-import { render } from 'react-swarm-ui';
+import { render, createDocument } from 'react-swarm-ui';
 
 // This can also be a WebSocket imported from 'ws'
 const socket = 'http://example.com';
+const doc = createDocument(socket);
 
 render(
   <AZooid />,
-  socket,
+  doc,
   () => {
     // Called after initial render is complete
   },

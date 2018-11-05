@@ -9,7 +9,7 @@ export type ZooidPosition = [number, number];
 
 export type ZooidColor = [number, number, number];
 
-export type Zooid = {
+export type ZooidState = {
   id: number,
   siz: number,
   ang: number,
@@ -22,3 +22,22 @@ export type Zooid = {
   rea: boolean,
   vel: number,
 };
+
+export type ZooidsState = {
+  ass: number,
+  nb: number,
+  dim: ZooidDimentions,
+  zoo: Array<ZooidState>,
+};export type Unsubscribe = () => any;
+
+export type ZooidUpdates = $Shape<$Rest<ZooidState, {|id: ZooidId|}>>;
+
+export type ZooidApi = {
+  id: ZooidId,
+  getState: () => ZooidState,
+  update: (updates: ZooidUpdates) => Promise<ZooidState>,
+  subscribe: (subscriber: Subscriber<ZooidState>) => Unsubscribe,
+  release: Unsubscribe,
+};
+
+export type Subscriber<T> = (t: T, unsub: Unsubscribe) => any;

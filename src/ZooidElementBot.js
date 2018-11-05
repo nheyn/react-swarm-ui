@@ -1,102 +1,87 @@
 // @flow
 import ZooidElement from './ZooidElement';
 
-import type { ZooidId, Zooid } from './types';
+import type { ZooidId, ZooidUpdates, ZooidApi } from './types';
 import type ZooidEventHandlerChangePosition from './ZooidEventHandlerChangePosition';
 import type ZooidEventHandlerMove from './ZooidEventHandlerMove';
-import type ZooidManager from './ZooidManager';
+import type ZooidEnvironment from './ZooidEnvironment';
 
-export type Attribues = $Shape<$Rest<Zooid, {|id: ZooidId|}>>;
-export type EventHandlers = {
-  onChangePosition?: ZooidEventHandlerChangePosition,
-  onStartMove?: ZooidEventHandlerMove,
-  onEndMove?: ZooidEventHandlerMove,
-};
+export type EventHandlers = $Shape<{
+  onChangePosition: ZooidEventHandlerChangePosition,
+  onStartMove: ZooidEventHandlerMove,
+  onEndMove: ZooidEventHandlerMove,
+}>;
+type NoChildren = [];
 
-export default class ZooidElementBot extends ZooidElement {
-  _attrs: Attribues;
-  _eventHandlers: EventHandlers;
-  _id: void | ZooidId;
+export default class ZooidElementBot
+extends ZooidElement<ZooidUpdates, EventHandlers, NoChildren> {
+  _zooid: void | ZooidApi;
 
-  constructor(attrs: Attribues, eventHandlers: EventHandlers) {
-    super();
+  constructor(attrs: ZooidUpdates, eventHandlers: EventHandlers) {
+    super(attrs, eventHandlers, []);
 
-    this._attrs = attrs;
-    this._eventHandlers = eventHandlers;
-    this._id = undefined;
+    this._zooid = undefined;
   }
 
-  getId(): ZooidId {
-    if (typeof this._id !== 'number') {
-      throw new Error('ZooidElement not correctly attached to parent');
-    }
-
-    return this._id;
-  }
-
-  update(newAttrs: Attribues, eventHandlers: EventHandlers) {
-    this._attrs = newAttrs;
-
-    this._detachAllEventHandlers();
-    this._eventHandlers = eventHandlers;
-
-    this.commitUpdates();
-  }
-
-  elementWillAppendChild(child: ZooidElement) {
+  elementWillAppendChild(child: ZooidElement<any, any, any>) {
     throw new Error('Zooid element cannot have children attached');
   }
 
-  elementDidAttachToParent(parent: ZooidElement) {
-    if (this._zooidManager === undefined) {
-      throw new Error('ZooidElement not correctly attached to parent');
-    }
-
-    this._id = this._zooidManager.getAvailableId();
+  elementDidAttachToParent(parent: ZooidElement<any, any, any>) {
+    this._zooid = this.getZooid();
     this.commitUpdates();
   }
 
   elementWillDetachFromParent() {
-    if (this._zooidManager === undefined || typeof this._id !== 'number') {
-      throw new Error('ZooidElement not correctly attached to parent');
+    const { _zooid: zooid } = this;
+    if (zooid === undefined) return;
+
+    for (let name in this._eventHandlers) {
+      this._eventHandlers[name].detachFrom(zooid);
     }
 
-    this._zooidManager.releaseId(this._id);
-    this._id = undefined;
-
-    this._detachAllEventHandlers();
+    zooid.release();
+    this._zooid = undefined;
   }
 
-  updateElement(zooidManager: ZooidManager): Promise<void> {
-    this._attachAllEventHandlers();
-
-    return this._updateZooids(zooidManager);
+  updateElement(): Promise<void> {
+    this._updateEnvironment();
+    this._updateEventHandlers();
+    return this._updateZooid();
   }
 
-  async _updateZooids(zooidManager: ZooidManager): Promise<void> {
-    const { _id: id } = this;
-    if (typeof id !== 'number') return;
+  _updateEnvironment() {
+    const { _zooidEnvironment: zooidEnvironment } = this;
+    if (zooidEnvironment === undefined) return;
 
-    await zooidManager.setZooids((zooids) => {
-      return zooids.map((zooid) => {
-        if (zooid.id !== id) return zooid;
+    //TODO, update so .setPosition(...) is the corner of .setDimentions(...)
+    if (Array.isArray(this._attrs.des)) {
+      zooidEnvironment.setPosition(this._attrs.des);
+    }
+    else {
+      zooidEnvironment.resetPosition();
+    }
 
-        return { ...zooid, ...this._attrs };
-      });
+    if (this._zooid === undefined) return;
+    const { siz: size } = this._zooid.getState();
+    zooidEnvironment.setDimentions([size, size]);
+  }
+
+  _updateEventHandlers() {
+    const { _zooid: zooid } = this;
+
+    for (let name in this._eventHandlers) {
+      this._eventHandlers[name].attachTo(zooid);
+    }
+  }
+
+  async _updateZooid(): Promise<void> {
+    const { _zooid: zooid, _zooidEnvironment: zooidEnvironment } = this;
+    if (zooid === undefined || zooidEnvironment === undefined) return;
+
+    await zooid.update({
+      ...this._attrs,
+      des: zooidEnvironment.getPosition(),
     });
-  }
-
-  _attachAllEventHandlers() {
-    if (typeof this._id !== 'number') return;
-
-    for (let name in this._eventHandlers) {
-      this._eventHandlers[name].attachTo(this);
-    }
-  }
-
-  _detachAllEventHandlers() {
-    for (let name in this._eventHandlers) {
-      this._eventHandlers[name].detach();
-    }
   }
 }

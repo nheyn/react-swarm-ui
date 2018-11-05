@@ -1,37 +1,27 @@
 // @flow
 
 import type WebSocket from 'ws';
-import type ZooidIdTracker from './ZooidIdTracker';
 import type {
   ZooidId,
   ZooidStatus,
   ZooidDimentions,
   ZooidPosition,
   ZooidColor,
-  Zooid,
+  ZooidState,
+  ZooidsState,
+  Unsubscribe,
+  Subscriber,
 } from './types';
-
-type State = {
-  ass: number,
-  nb: number,
-  dim: ZooidDimentions,
-  zoo: Array<Zooid>,
-};
-
-type Unsubscribe = () => any;
-type Subscriber = (zm: ZooidManager, unsub: Unsubscribe) => any;
 
 export default class ZooidManager {
   _ws: void | WebSocket;
-  _idTracker: ZooidIdTracker;
-  _state: State;
+  _state: ZooidsState;
   _subscribers: Array<() => void>;
   _isUpdating: bool;
-  _nextUpdate: void | (zooids: Array<Zooid>) => Array<Zooid>;
+  _nextUpdate: void | (zooids: Array<ZooidState>) => Array<ZooidState>;
 
-  constructor(ws: WebSocket, idTracker: ZooidIdTracker) {
+  constructor(ws: WebSocket) {
     this._ws = undefined;
-    this._idTracker = idTracker;
     this._state = {
       ass: 0,
       nb: 0,
@@ -51,7 +41,6 @@ export default class ZooidManager {
         this._subscribers.forEach((subscriber) => subscriber());
       });
     });
-    this._idTracker.subscribeTo(this);
   }
 
   getTableDimentions(): ZooidDimentions {
@@ -62,21 +51,13 @@ export default class ZooidManager {
     return this._state.nb;
   }
 
-  getZooid(id: number): void | Zooid {
-    return this._state.zoo.find((zooid) => zooid.id === id);
-  }
-
-  getAvailableId(): ZooidId {
-    return this._idTracker.getId();
-  }
-
-  releaseId(id: ZooidId) {
-    this._idTracker.releaseId(id);
+  getZooids(): Array<ZooidState> {
+    return this._state.zoo;
   }
 
   setZooids(
-    update: (zooids: Array<Zooid>) => Array<Zooid>
-  ): Promise<Array<Zooid>> {
+    update: (zooids: Array<ZooidState>) => Array<ZooidState>
+  ): Promise<Array<ZooidState>> {
     return new Promise((resolve, reject) => {
       // If there is an update already started
       if (this._isUpdating) {
@@ -129,7 +110,7 @@ export default class ZooidManager {
     });
   }
 
-  subscribe(subscriber: Subscriber): Unsubscribe {
+  subscribe(subscriber: Subscriber<ZooidManager>): Unsubscribe {
     let wrappedSubscriber;
     let unsubscribe = () => {};
     wrappedSubscriber = () => {
@@ -149,9 +130,8 @@ export default class ZooidManager {
   }
 
   close() {
-    this._idTracker.unsubscribe();
-
     if (this._ws === undefined) return;
+
     this._ws.close();
   }
 }

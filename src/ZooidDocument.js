@@ -1,13 +1,25 @@
 // @flow
 import ZooidElement from './ZooidElement';
 
-import type { Zooid } from './types';
-import type ZooidManager  from './ZooidManager';
+import type ZooidEnvironment  from './ZooidEnvironment';
 
-export default class ZooidDocument extends ZooidElement {
-  constructor(zooidManager: ZooidManager) {
-    super();
+export default class ZooidDocument extends ZooidElement<*, *, *> {
+  __container: *; //So this can be re-render using the render(...)
 
-    this._zooidManager = zooidManager;
+  constructor(zooidEnvironment: ZooidEnvironment) {
+    super({}, {}, []);
+
+    this._zooidEnvironment = zooidEnvironment;
+  }
+
+  onLoad(loadFunc: () => void) {
+    if (this._zooidEnvironment === undefined) {
+      throw new Error('ZooidDocument not constructed correctly');
+    }
+
+    this._zooidEnvironment._zooidManager.subscribe((_, unsubscribe) => {
+      unsubscribe();
+      loadFunc();
+    });
   }
 }
