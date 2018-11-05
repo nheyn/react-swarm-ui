@@ -1,5 +1,4 @@
 // @flow
-import createRender from './createRender';
 
-export const render = createRender();
-export default { render };
+export { default as createDocument } from './createDocument'
+export { default as render } from './render';
