@@ -40,7 +40,12 @@ export default function createRender() {
     // Initial Reconciler Container
     const zooidManager = new ZooidManager(webSocket);
     const zooidIdTracker = new ZooidIdTracker();
-    const zooidEnvironment = new ZooidEnvironment(zooidManager, zooidIdTracker);
+    const zooidEnvironment = new ZooidEnvironment(
+      zooidManager,
+      zooidIdTracker,
+      zooidManager.getTableDimentions(),
+      [0, 0]
+    );
     const zooidDocument = new ZooidDocument(zooidEnvironment);
 
     const { updateContainer, createContainer } = createReconciler();

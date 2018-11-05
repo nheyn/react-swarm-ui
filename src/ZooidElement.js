@@ -161,7 +161,10 @@ export default class ZooidElement<
     this.elementWillAttachToParent(parent);
 
     peformAttach();
-    this._zooidEnvironment = parent._zooidEnvironment;
+
+    if (parent._zooidEnvironment !== undefined) {
+      this._zooidEnvironment = parent._zooidEnvironment.getChildEnvironment();
+    }
 
     await this.commitUpdates();
     this.elementDidAttachToParent(parent);

@@ -44,15 +44,44 @@ extends ZooidElement<ZooidUpdates, EventHandlers, NoChildren> {
     this._zooid = undefined;
   }
 
-  async updateElement(): Promise<void> {
+  updateElement(): Promise<void> {
+    this._updateEnvironment();
+    this._updateEventHandlers();
+    return this._updateZooid();
+  }
+
+  _updateEnvironment() {
+    const { _zooidEnvironment: zooidEnvironment } = this;
+    if (zooidEnvironment === undefined) return;
+
+    //TODO, update so .setPosition(...) is the corner of .setDimentions(...)
+    if (Array.isArray(this._attrs.des)) {
+      zooidEnvironment.setPosition(this._attrs.des);
+    }
+    else {
+      zooidEnvironment.resetPosition();
+    }
+
+    if (this._zooid === undefined) return;
+    const { siz: size } = this._zooid.getState();
+    zooidEnvironment.setDimentions([size, size]);
+  }
+
+  _updateEventHandlers() {
     const { _zooid: zooid } = this;
-    if (zooid === undefined) return;
 
     for (let name in this._eventHandlers) {
       this._eventHandlers[name].attachTo(zooid);
     }
+  }
 
-    //TODO, add bound interrupt
-    await zooid.update(this._attrs);
+  async _updateZooid(): Promise<void> {
+    const { _zooid: zooid, _zooidEnvironment: zooidEnvironment } = this;
+    if (zooid === undefined || zooidEnvironment === undefined) return;
+
+    await zooid.update({
+      ...this._attrs,
+      des: zooidEnvironment.getPosition(),
+    });
   }
 }
